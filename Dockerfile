@@ -19,6 +19,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && \
 # ✔ Add Cypress for End-to-End testing? … Yes
 # ✔ Add ESLint for code quality? … Yes
 # ✔ Add Prettier for code formatting? … Yes
+
+# RUN sudo npm install -g @vue/cli
+# > vue -V 
+# @vue/cli 5.0.8
+
 # RUN cd CSMI_2
 RUN npm install && \
     npm run lint && \
