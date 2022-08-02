@@ -3,17 +3,23 @@
   ><br />
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from "vue";
+export default defineComponent({
   name: "NestAPILink",
   props: {
     nodeURL: String,
     apiFunction: String,
   },
+  data() {
+    return {
+      nestAPIFunctionResponse: null,
+    };
+  },
   methods: {
-    apiFunUrl(nodeURL, apiFunction) {
+    apiFunUrl(nodeURL: string, apiFunction: string) {
       return nodeURL + "/api/" + apiFunction;
     },
   },
-};
+});
 </script>

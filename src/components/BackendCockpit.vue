@@ -20,13 +20,11 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import NestAPI from "./NestAPI.vue";
-
 export default defineComponent({
   name: "BackendCockpit",
   components: {
     NestAPI,
   },
-
   data() {
     return {
       host: "127.0.0.1",

@@ -27,7 +27,6 @@ export default defineComponent({
     };
   },
   created() {
-    // Simple GET request using fetch
     fetch(this.$props.nodeURL + "/api")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
