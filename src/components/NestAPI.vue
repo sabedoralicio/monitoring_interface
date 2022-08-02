@@ -1,42 +1,36 @@
 <template>
-  <h1>Nest Node {{nodeURL}}</h1>
-  <h3>API functions</h3>
+  <h3>API function names at host {{ nodeURL }}</h3>
   <div id="app">
     <ul>
       <span v-for="api_function in nestAPIFunctions" :key="api_function">
-         <NestAPILink 
-           nodeURL="http://127.0.0.1:7777"
-           :apiFunction='api_function'/>
-       </span>
+        <NestAPILink :nodeURL="nodeURL" :apiFunction="api_function" />
+      </span>
     </ul>
   </div>
 </template>
 
-<script>
-import axios from 'axios';
-import NestAPILink from './NestAPILink.vue';
+<script lang="ts">
+import { defineComponent } from "vue";
+import NestAPILink from "./NestAPILink.vue";
 
-export default {
+export default defineComponent({
   name: "NestAPI",
   components: {
-    NestAPILink
+    NestAPILink,
   },
   props: {
-    nodeURL: String
-  },^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    nodeURL: String,
+  },
   data() {
     return {
-      nestAPIFunctions: null
+      nestAPIFunctions: null,
     };
   },
   created() {
-    // Simple GET request using axios
-    axios.get(this.$props.nodeURL+"/api")
-      .then(response => this.nestAPIFunctions = response.data);
     // Simple GET request using fetch
-//    fetch(this.$props.nodeURL+"/api")
-//      .then(response => response.json())
-//      .then(data => (this.nestAPIFunctions = data));
-  }
-};
+    fetch(this.$props.nodeURL + "/api")
+      .then((response) => response.json())
+      .then((data) => (this.nestAPIFunctions = data));
+  },
+});
 </script>

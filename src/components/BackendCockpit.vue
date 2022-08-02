@@ -11,17 +11,7 @@
           stop a job.
         </p>
         <br />
-        <h3>API function names at host {{ host }}</h3>
-        <div id="app">
-          <ul>
-            <span v-for="api_function in nestAPIFunctions" :key="api_function">
-              <NestAPILink
-                nodeURL="http://127.0.0.1:7777"
-                :apiFunction="api_function"
-              />
-            </span>
-          </ul>
-        </div>
+        <NestAPI :nodeURL="nodeURL" />
       </v-col>
     </v-row>
   </v-container>
@@ -29,28 +19,20 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-//import axios from 'axios';
-import NestAPILink from "./NestAPILink.vue";
+import NestAPI from "./NestAPI.vue";
 
 export default defineComponent({
   name: "BackendCockpit",
   components: {
-    NestAPILink,
+    NestAPI,
   },
 
   data() {
     return {
       host: "127.0.0.1",
       port: 7777,
-      nestAPIFunctions: null,
+      nodeURL: "http://127.0.0.1:7777",
     };
-  },
-  created() {
-    // Simple GET request using fetch
-    //fetch(this.$props. + "/api")
-    fetch("http://127.0.0.1:7777/api")
-      .then((response) => response.json())
-      .then((data) => (this.nestAPIFunctions = data));
   },
 });
 </script>
