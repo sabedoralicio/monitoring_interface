@@ -1,0 +1,14 @@
+{
+      "subMenuKnowledge": [
+        { "id": "Backend",
+		  "items": ["Nest Server", "Insite"] },
+        { "id": "Selection",
+		  "items": ["Neurons", "Synapses"] },
+        { "id": "View",
+		  "items": ["Weighting A","Weighting B"] },
+        { "id": "Grafana",
+		  "items": ["Grafana A","Grafana B"] },
+        { "id": "Help",
+		  "items": ["Doc","About"] }
+      ]
+}

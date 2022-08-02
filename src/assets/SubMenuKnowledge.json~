@@ -1,0 +1,7 @@
+[
+        { id: "Backend" },
+        { id: "Selection" },
+        { id: "View" },
+        { id: "Grafana" },
+        { id: "Help" },
+]
