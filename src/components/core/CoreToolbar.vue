@@ -1,19 +1,25 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
-    <v-list>
-      <v-list-item v-for="k in subMenuKnowledge" :key="k.id">
-        <v-list-item-title>{{ k.id }}</v-list-item-title>
-      </v-list-item>
-    </v-list>
+    <v-btn v-for="k in subMenuKnowledge" :key="k.id" flat>{{ k.id }}</v-btn>
   </v-toolbar>
 </template>
 
 <script lang="ts">
-import { subMenuKnowledge } from "@/assets/SubMenuKnowledge.json";
+// TODO: Path to SubMenuKnowledge.json
+//import { subMenuKnowledge } from "SubMenuKnowledge.json";
 export default {
   data() {
+    //    return {
+    //      subMenuKnowledge: subMenuKnowledge,
+    //    };
     return {
-      subMenuKnowledge: subMenuKnowledge,
+      subMenuKnowledge: [
+        { id: "Backend", items: ["Nest Server", "Insite"] },
+        { id: "Selection", items: ["Neurons", "Synapses"] },
+        { id: "View", items: ["Weighting A", "Weighting B"] },
+        { id: "Grafana", items: ["Grafana A", "Grafana B"] },
+        { id: "Help", items: ["Doc", "About"] },
+      ],
     };
   },
 };
