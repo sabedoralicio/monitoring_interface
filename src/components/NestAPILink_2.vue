@@ -1,18 +1,29 @@
 <template>
   <h3>API function names at host {{ nodeURL }}</h3>
-  <div id="app">
-  <v-table fixed-header height="300px">
+  <v-simple-table fixed-header height="300px">
+    <template v-slot:default>
       <thead>
         <tr>
           <th class="text-left">Name</th>
+          <th class="text-left">Calories</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td><NestAPILink :nodeURL="nodeURL" :apiFunction="api_function" /></td>
+          <td>{{ api_function }}</td>
+          <td>{{ api_function }}</td>
         </tr>
       </tbody>
-  </v-table>
+    </template>
+  </v-simple-table>
+  <div id="app">
+    <perfect-scrollbar max-height="300px">
+      <ul>
+        <span v-for="api_function in nestAPIFunctions" :key="api_function">
+          <NestAPILink :nodeURL="nodeURL" :apiFunction="api_function" />
+        </span>
+      </ul>
+    </perfect-scrollbar>
   </div>
 </template>
 
@@ -37,7 +48,6 @@ export default defineComponent({
     fetch(this.$props.nodeURL + "/api")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
-	  
   },
 });
 </script>
