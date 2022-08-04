@@ -1,6 +1,7 @@
 # TODO: background mode
+# TODO: CMake by Repo
 
-# syntax=docker/dockerfile:1
+CM# syntax=docker/dockerfile:1
 FROM ubuntu:20.04
 LABEL maintainer "rudnick@uni-trier.de"
 
