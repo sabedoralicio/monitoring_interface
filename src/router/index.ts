@@ -52,6 +52,33 @@ const routes: Array<RouteRecordRaw> = [
     component: () =>
       import(/* webpackChunkName: "help" */ "../views/HelpView.vue"),
   },
+  {
+    path: "/api_get_kernel_status",
+    name: "api_get_kernel_status",
+    // route level code-splitting
+    // this generates a separate chunk (api_get_kernel_status.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () =>
+      import(/* webpackChunkName: "api_get_kernel_status" */ "../views/APIGetKernelStatus.vue"),
+  },
+  {
+    path: "/api_get_connections",
+    name: "api_get_connections",
+    // route level code-splitting
+    // this generates a separate chunk (api_get_connections.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () =>
+      import(/* webpackChunkName: "api_get_connections" */ "../views/APIGetConnections.vue"),
+  },
+  {
+    path: "/api_tics_per_ms",
+    name: "api_tics_per_ms",
+    // route level code-splitting
+    // this generates a separate chunk (api_tics_per_ms.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () =>
+      import(/* webpackChunkName: "api_tics_per_ms" */ "../views/APITicsPerMs.vue"),
+  },
 ];
 
 const router = createRouter({

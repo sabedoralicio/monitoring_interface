@@ -10,7 +10,7 @@ TODO: don't return empty for structures.
 <script lang="ts">
 import { defineComponent } from "vue";
 export default defineComponent({
-  name: "NestAPILink",
+  name: "NestAPILinkText",
   props: {
     nodeURL: String,
     apiFunction: String,

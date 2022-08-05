@@ -10,14 +10,14 @@ TODO: don't return empty for structures.
 <script lang="ts">
 import { defineComponent } from "vue";
 export default defineComponent({
-  name: "NestAPILink",
+  name: "NestAPILinkJsonRaw",
   props: {
     nodeURL: String,
     apiFunction: String,
   },
   data() {
     return {
-      nestAPIFunctionResponse: "",
+      nestAPIFunctionResponse: null,
     };
   },
   methods: {
@@ -27,7 +27,7 @@ export default defineComponent({
   },
   created() {
     fetch(this.$props.nodeURL + "/api/" + this.$props.apiFunction)
-      .then((response) => response.text())
+      .then((response) => response.json())
       .then((data) => (this.nestAPIFunctionResponse = data));
   },
 });

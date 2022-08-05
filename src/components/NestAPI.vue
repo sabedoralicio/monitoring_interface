@@ -1,5 +1,5 @@
 <template>
-  <h3>API function names at host {{ nodeURL }}</h3>
+  <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
   <v-table fixed-header height="300px">
       <thead>
@@ -9,7 +9,22 @@
       </thead>
       <tbody>
         <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td><NestAPILink :nodeURL="nodeURL" :apiFunction="api_function" /></td>
+          <td><NestAPILinkText :nodeURL="nodeURL" :apiFunction="api_function" /></td>
+        </tr>
+      </tbody>
+  </v-table>
+  </div>
+  <h3>API function names at host {{ nodeURL }}</h3>
+  <div id="app">
+  <v-table fixed-header height="900px">
+      <thead>
+        <tr>
+          <th class="text-left">Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="api_function in nestAPIFunctions" :key="api_function">
+          <td><NestAPILinkJsonRaw :nodeURL="nodeURL" :apiFunction="api_function" /></td>
         </tr>
       </tbody>
   </v-table>
@@ -18,12 +33,14 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import NestAPILink from "./NestAPILink.vue";
+import NestAPILinkJsonRaw from "./NestAPILinkJsonRaw.vue";
+import NestAPILinkText from "./NestAPILinkText.vue";
 
 export default defineComponent({
   name: "NestAPI",
   components: {
-    NestAPILink,
+    NestAPILinkJsonRaw,
+    NestAPILinkText,
   },
   props: {
     nodeURL: String,

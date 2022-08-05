@@ -1,30 +1,6 @@
 <template>
-  <h3>API function names at host {{ nodeURL }}</h3>
-  <v-simple-table fixed-header height="300px">
-    <template v-slot:default>
-      <thead>
-        <tr>
-          <th class="text-left">Name</th>
-          <th class="text-left">Calories</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td>{{ api_function }}</td>
-          <td>{{ api_function }}</td>
-        </tr>
-      </tbody>
-    </template>
-  </v-simple-table>
-  <div id="app">
-    <perfect-scrollbar max-height="300px">
-      <ul>
-        <span v-for="api_function in nestAPIFunctions" :key="api_function">
-          <NestAPILink :nodeURL="nodeURL" :apiFunction="api_function" />
-        </span>
-      </ul>
-    </perfect-scrollbar>
-  </div>
+  <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
+  >: {{ outcomeOf(nestAPIFunctionResponse) }}<br />
 </template>
 
 <script lang="ts">

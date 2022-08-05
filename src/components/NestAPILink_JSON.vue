@@ -4,7 +4,7 @@ TODO: don't return empty for structures.
 
 <template>
   <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
-  >: {{ nestAPIFunctionResponse }}<br />
+  >: {{ nestAPIFunctionResponse }}
 </template>
 
 <script lang="ts">
@@ -17,17 +17,12 @@ export default defineComponent({
   },
   data() {
     return {
-      nestAPIFunctionResponse: "",
+      nestAPIFunctionResponse: null,
     };
-  },
-  methods: {
-    apiFunUrl(nodeURL: string, apiFunction: string) {
-      return nodeURL + "/api/" + apiFunction;
-    },
   },
   created() {
     fetch(this.$props.nodeURL + "/api/" + this.$props.apiFunction)
-      .then((response) => response.text())
+      .then((response) => response.json())
       .then((data) => (this.nestAPIFunctionResponse = data));
   },
 });
