@@ -1,7 +1,3 @@
-/* Recognizes Lists, numerics & bools
-TODO: don't return empty for structures.
-*/
-
 <template>
   <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
   >: {{ nestAPIFunctionResponse }}<br />
