@@ -1,8 +1,9 @@
 <template>
     <core-toolbar />
     <div file="MonitoringInterface"></div>
-    <backend-cockpit />
+      <router-view />
 <!--
+    <backend-cockpit />
   <v-app class="grey lighten-4">
     <v-content>
       <router-view></router-view>

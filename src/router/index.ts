@@ -2,13 +2,14 @@ import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import MonitoringInterface from "../views/MonitoringInterface.vue";
 
 const routes: Array<RouteRecordRaw> = [
+//  {
+//    path: "/",
+//    name: "home",
+//    component: MonitoringInterface,
+//  },
   {
+    // path: "/backend",
     path: "/",
-    name: "home",
-    component: MonitoringInterface,
-  },
-  {
-    path: "/backend",
     name: "backend",
     // route level code-splitting
     // this generates a separate chunk (backend.[hash].js) for this route
