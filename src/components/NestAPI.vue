@@ -1,4 +1,5 @@
 <template>
+<!--
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
   <v-table fixed-header height="300px">
@@ -29,6 +30,7 @@
       </tbody>
   </v-table>
   </div>
+-->
 </template>
 
 <script lang="ts">
