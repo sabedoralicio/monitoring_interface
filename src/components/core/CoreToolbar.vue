@@ -1,7 +1,7 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
     <v-btn v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat
-	  ><router-link :to="k.path">{{ k.id }}</router-link><v-tooltip
+	  ><router-link class="button" :to="k.path">{{ k.id }}</router-link><v-tooltip
         activator="parent"
         location="bottom"
       >{{ k.tooltip }}</v-tooltip></v-btn>
@@ -54,4 +54,8 @@ export default {
   },
 };
 </script>
+
+<style>
+a.button { text-decoration: none; }
+</style>
 
