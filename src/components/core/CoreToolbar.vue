@@ -1,6 +1,7 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
-    <v-btn v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat>{{ k.id }}<v-tooltip
+    <v-btn v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat
+	  ><router-link :to="k.path">{{ k.id }}</router-link><v-tooltip
         activator="parent"
         location="bottom"
       >{{ k.tooltip }}</v-tooltip></v-btn>
@@ -38,7 +39,7 @@ export default {
     return {
 	  drawer: false,
       subMenuKnowledge: [
-        { id: "Backend", path: "/backend", items: ["Nest Server", "Insite"],
+        { id: "Backend", path: "/", items: ["Nest Server", "Insite"],
 		  tooltip: "Physical node access" },
         { id: "Selection", path: "/selection", items: ["Neurons", "Synapses"],
 		  tooltip: "Neural model access" },
