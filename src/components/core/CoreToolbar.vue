@@ -1,5 +1,6 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
+    <span @click="drawer = !drawer" >>>></span>
     <v-btn v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat
 	  ><router-link class="button" :to="k.path">{{ k.id }}</router-link><v-tooltip
         activator="parent"
@@ -7,23 +8,24 @@
       >{{ k.tooltip }}</v-tooltip></v-btn>
   </v-toolbar>
 
-    <!-- switches side bar on & off -->
-<!--
-    <v-toolbar abcdef="ABCDEF" flat app>
-      <v-toolbar-title class="text-uppercase grey--text">
-        <span @click="drawer = !drawer" >ABCDEFGHI</span>
-      </v-toolbar-title>
-    </v-toolbar>
-
-    <v-navigation-drawer ghijkl="GHIJKL" app v-model="drawer" class="primary">
+    <v-navigation-drawer app v-model="drawer" class="primary">
       <v-list>
         <v-list-tile v-for="link in subMenuKnowledge" :key="link.id" router :to="link.path">
           <v-list-tile-content>
-            <v-list-tile-title class="white--text">{{ link.text }}</v-list-tile-title>
+            <v-list-tile-title class="blue--text">asdf{{ link.text }}</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
       </v-list>
     </v-navigation-drawer>	
+
+    <!-- switches side bar on & off -->
+<!--
+    <v-toolbar abcdef="ABCDEF" flat app>
+	<v-toolbar-side-icon @click="drawer = !drawer" class="blue--text"></v-toolbar-side-icon>
+      <v-toolbar-title class="text-uppercase grey--text">
+        <span @click="drawer = !drawer" >ABCDEFGHI</span>
+      </v-toolbar-title>
+    </v-toolbar>
 -->
 
 </template>
@@ -38,6 +40,7 @@ export default {
     //    };
     return {
 	  drawer: false,
+	  sidebar: 4,
       subMenuKnowledge: [
         { id: "Backend", path: "/", items: ["Nest Server", "Insite"],
 		  tooltip: "Physical node access" },
