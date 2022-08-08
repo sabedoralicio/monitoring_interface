@@ -9,13 +9,26 @@
   </v-toolbar>
 
     <v-navigation-drawer app v-model="drawer" class="primary">
-      <v-list>
-        <v-list-tile v-for="link in subMenuKnowledge" :key="link.id" router :to="link.path">
-          <v-list-tile-content>
-            <v-list-tile-title class="blue--text">asdf{{ link.text }}</v-list-tile-title>
-          </v-list-tile-content>
-        </v-list-tile>
-      </v-list>
+	  <v-table fixed-header height="900px">
+      <tbody>
+        <tr>
+          <td></td>
+        </tr><tr>
+          <td></td>
+        </tr><tr>
+          <td><router-link to="/">Backend</router-link></td>
+        </tr>
+		<tr>
+          <td><router-link to="/selection">Selection</router-link></td>
+        </tr><tr>
+          <td><router-link to="/view">View</router-link></td>
+        </tr><tr>
+          <td><router-link to="/grafana">Grafana</router-link></td>
+        </tr><tr>
+          <td><router-link to="/help">Help</router-link></td>
+        </tr>
+      </tbody>
+  </v-table>
     </v-navigation-drawer>	
 
     <!-- switches side bar on & off -->
