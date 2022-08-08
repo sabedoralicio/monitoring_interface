@@ -8,13 +8,13 @@
       >{{ k.tooltip }}</v-tooltip></v-btn>
   </v-toolbar>
 
-    <v-navigation-drawer app v-model="drawer" class="primary">
-	  <BackendWorks v-if="sidebar == 0" />
-	  <SelectionWorks v-else-if="sidebar == 1" />
-	  <ViewWorks v-else-if="sidebar == 2" />
-	  <GrafanaWorks v-else-if="sidebar == 3" />
-	  <HelpWorks v-else />
-    </v-navigation-drawer>
+  <v-navigation-drawer app v-model="drawer" class="primary">
+    <BackendWorks v-if="sidebar == 0" />
+    <SelectionWorks v-else-if="sidebar == 1" />
+    <ViewWorks v-else-if="sidebar == 2" />
+    <GrafanaWorks v-else-if="sidebar == 3" />
+    <HelpWorks v-else />
+  </v-navigation-drawer>
 
 </template>
 
@@ -36,8 +36,8 @@ export default {
   },
   data() {
     return {
-	  drawer: false,
-	  sidebar: 4,
+      drawer: false,
+      sidebar: 4,
       headerBarKnowledge: headerBarKnowledge,
     };
   },
