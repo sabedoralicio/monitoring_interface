@@ -1,10 +1,16 @@
 <template>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
-  <v-table fixed-header height="1300px">
+  <v-table fixed-header height="300px">
+      <thead>
+        <tr>
+          <th class="text-left">Name</th>
+        </tr>
+      </thead>
       <tbody>
         <tr v-for="api_function in nestAPIFunctions" :key="api_function">
           <td><NestAPILinkText :nodeURL="nodeURL" :apiFunction="api_function" /></td>
+          <td>{{ api_function }}</td>
         </tr>
       </tbody>
   </v-table>
@@ -12,6 +18,11 @@
   <h3>API function names at host {{ nodeURL }}</h3>
   <div id="app">
   <v-table fixed-header height="900px">
+      <thead>
+        <tr>
+          <th class="text-left">Name</th>
+        </tr>
+      </thead>
       <tbody>
         <tr v-for="api_function in nestAPIFunctions" :key="api_function">
           <td><NestAPILinkJsonRaw :nodeURL="nodeURL" :apiFunction="api_function" /></td>
@@ -31,11 +42,6 @@ export default defineComponent({
   components: {
     NestAPILinkJsonRaw,
     NestAPILinkText,
-  },
-  methods: {
-    isHtmlErrorMessage(responseString:string): number {
-	  return responseString.indexOf("<");
-	}
   },
   data() {
     return {

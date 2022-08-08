@@ -1,9 +1,6 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
-    <span @click="drawer = !drawer" >>>><v-tooltip
-        activator="parent"
-        location="bottom"
-      >Show / hide side bar</v-tooltip></span>
+    <span @click="drawer = !drawer" >>>></span>
     <v-btn @click="sidebar = k.sidebar" v-for="k in headerBarKnowledge" :key="k.id" slot="activator" flat
 	  >{{ k.id }}<v-tooltip
         activator="parent"

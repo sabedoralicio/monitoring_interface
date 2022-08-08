@@ -25,8 +25,7 @@
         class="text-center text-white mt-4"
         cols="12"
       >
-        <!-- {{ new Date().getFullYear() }} -->
-        {{ new Date() }} — <strong>Co-Simulation Monitoring Interface</strong>
+        {{ new Date().getFullYear() }} — <strong>Co-Simulation Monitoring Interface</strong>
       </v-col>
     </v-row>
   </v-footer>
