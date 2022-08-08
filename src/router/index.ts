@@ -18,6 +18,15 @@ const routes: Array<RouteRecordRaw> = [
       import(/* webpackChunkName: "backend" */ "../views/BackendView.vue"),
   },
   {
+    path: "/nest_api",
+    name: "nest_api",
+    // route level code-splitting
+    // this generates a separate chunk (backend.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () =>
+      import(/* webpackChunkName: "nest_api" */ "../views/NestAPIView.vue"),
+  },
+  {
     path: "/selection",
     name: "selection",
     // route level code-splitting

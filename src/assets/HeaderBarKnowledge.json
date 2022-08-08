@@ -1,0 +1,15 @@
+{
+  "count": 5,
+  "subMenuKnowledge": [
+        { "id": "Backend", "sidebar": 0, "path": "/", "items": ["Nest Server", "Insite"],
+		  "tooltip": "Physical node access" },
+        { "id": "Selection", "sidebar": 1, "path": "/selection", "items": ["Neurons", "Synapses"],
+		  "tooltip": "Neural model access" },
+        { "id": "View", "sidebar": 2, "path": "/view", "items": ["Weighting A", "Weighting B"],
+		  "tooltip": "Composition of overall advice" },
+        { "id": "Grafana", "sidebar": 3, "path": "/grafana", "items": ["Grafana A", "Grafana B"],
+		  "tooltip": "Additional adornment" },
+        { "id": "Help", "sidebar": 4, "path": "/help", "items": ["Doc", "About"],
+		  "tooltip": "Non process related support." }
+  ]
+}
