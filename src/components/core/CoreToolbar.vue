@@ -1,7 +1,7 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
     <span @click="drawer = !drawer" >>>></span>
-    <v-btn @click="sidebar = k.sidebar" v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat
+    <v-btn @click="sidebar = k.sidebar" v-for="k in headerBarKnowledge" :key="k.id" slot="activator" flat
 	  >{{ k.id }}<v-tooltip
         activator="parent"
         location="bottom"
@@ -24,7 +24,7 @@ import SelectionWorks from "@/components/SelectionWorks.vue";
 import ViewWorks from "@/components/ViewWorks.vue";
 import GrafanaWorks from "@/components/GrafanaWorks.vue";
 import HelpWorks from "@/components/HelpWorks.vue";
-import { subMenuKnowledge } from "@/assets/HeaderBarKnowledge.json";
+import { headerBarKnowledge } from "@/assets/HeaderBarKnowledge.json";
 
 export default {
   components: {
@@ -38,7 +38,7 @@ export default {
     return {
 	  drawer: false,
 	  sidebar: 4,
-      subMenuKnowledge: subMenuKnowledge,
+      headerBarKnowledge: headerBarKnowledge,
     };
   },
 };

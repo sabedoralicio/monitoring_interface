@@ -1,6 +1,6 @@
 {
   "count": 5,
-  "subMenuKnowledge": [
+  "headerBarKnowledge": [
         { "id": "Backend", "sidebar": 0, "path": "/", "items": ["Nest Server", "Insite"],
 		  "tooltip": "Physical node access" },
         { "id": "Selection", "sidebar": 1, "path": "/selection", "items": ["Neurons", "Synapses"],
