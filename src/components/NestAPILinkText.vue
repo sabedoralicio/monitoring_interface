@@ -11,6 +11,7 @@ enum NestResponseKind {
   CallableSignatureNotSupported,
   HtmlMessage,
   KernelException,
+  MissingArguments,
   NoHelpIndex,
   NotInNestModule,
   SLIFunctionDictError,
@@ -39,6 +40,11 @@ function isHtmlMessage(responseString:string): boolean {
 
 function isKernelException(responseString:string): boolean {
   return responseString.indexOf("KernelException") == 0;
+}
+
+function isMissingArguments(responseString:string): boolean {
+  return responseString.includes("() missing ")
+    && responseString.includes(" required positional argument");
 }
 
 function isNoHelpIndex(responseString:string): boolean {
@@ -73,6 +79,8 @@ function asNestResponseLore(responseString:string): NestResponseLore {
   	return { kind: NestResponseKind.HtmlMessage, code: responseString };
   } else if(isKernelException(responseString)) {
   	return { kind: NestResponseKind.KernelException, code: responseString };
+  } else if(isMissingArguments(responseString)) {
+  	return { kind: NestResponseKind.MissingArguments, code: responseString };
   } else if(isNoHelpIndex(responseString)) {
   	return { kind: NestResponseKind.NoHelpIndex, code: responseString };
   } else if(isNotInNestModule(responseString)) {
@@ -99,6 +107,9 @@ function showNestResponseLore(lore:NestResponseLore): string {
     case NestResponseKind.KernelException: {
 	  return "KERNEL EXCEPTION";
 	}
+    case NestResponseKind.MissingArguments: {
+	  return "MISSING ARGUMENTS";
+	}
     case NestResponseKind.NoHelpIndex: {
 	  return "NO HELP INDEX";
 	}
@@ -115,7 +126,10 @@ function showNestResponseLore(lore:NestResponseLore): string {
 	  return "UNEXPECTED OBJECT";
 	}
     default: {
-	  return lore.code;
+	  // "max_update_time":-Infinity
+	  let negInf = /-"Infinity"/g;
+	  let posInf = /Infinity/gi;
+	  return lore.code.replaceAll(posInf, "\"Infinity\"").replaceAll(negInf, "\"-Infinity\"");
 	}
   }
 }
