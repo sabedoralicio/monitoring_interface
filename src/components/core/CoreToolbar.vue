@@ -1,10 +1,10 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
-    <router-link class="button" :to="k.path"><v-btn v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat
-	  >{{ k.id }}<v-tooltip
+    <v-btn v-for="k in subMenuKnowledge" :key="k.id" slot="activator" flat
+	  ><router-link class="button" :to="k.path">{{ k.id }}</router-link><v-tooltip
         activator="parent"
         location="bottom"
-      >{{ k.tooltip }}</v-tooltip></v-btn></router-link>
+      >{{ k.tooltip }}</v-tooltip></v-btn>
   </v-toolbar>
 
     <!-- switches side bar on & off -->
