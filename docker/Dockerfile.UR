@@ -1,7 +1,7 @@
 # TODO: background mode
 # TODO: CMake by Repo
 
-# syntax=docker/dockerfile:1
+CM# syntax=docker/dockerfile:1
 FROM ubuntu:20.04
 LABEL maintainer "rudnick@uni-trier.de"
 
@@ -23,20 +23,14 @@ RUN apt-get update && \
     apt-get install -y libgsl-dev libgslcblas0 libltdl-dev && \
     apt-get install -y doxygen wget
 
-RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
-    gpg --dearmor kitware-archive-latest.asc && \
-	mv kitware-archive-latest.asc.gpg /usr/share/keyrings/kitware-archive-keyring.gpg
-
-ADD kitware.list .
-RUN mv kitware.list /etc/apt/sources.list.d
-
-RUN apt-get update && \
-    apt-get install -y kitware-archive-keyring
-
-RUN apt-get update && \
-    apt-get install -y cmake
-
+RUN wget https://cmake.org/files/v3.20/cmake-3.20.0.tar.gz
 RUN wget https://github.com/nest/nest-simulator/archive/refs/tags/v3.3.tar.gz
+
+RUN tar fvxz cmake-3.20.0.tar.gz && \
+    cd cmake-3.20.0 && \
+    ./bootstrap && \
+    make && \
+    make install
 
 RUN tar fvxz v3.3.tar.gz
 RUN mkdir nest-simulator-3.3/BUILD && \
