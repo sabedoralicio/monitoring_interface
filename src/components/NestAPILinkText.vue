@@ -1,6 +1,10 @@
 <template>
+<!--
   <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
   >: {{ filteredResponse(nestAPIFunctionResponse) }}<br />
+-->
+  <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
+  >: {{ nestAPIFunctionResponse }}<br />
 </template>
 
 <script lang="ts">

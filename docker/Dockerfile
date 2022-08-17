@@ -1,9 +1,13 @@
 # TODO: background mode
 # TODO: CMake by Repo
+# ~/CSMI/GitHub/monitoring_interface/docker# time docker build -t csmi_nest_vue:test .
 
 # syntax=docker/dockerfile:1
 FROM ubuntu:20.04
 LABEL maintainer "rudnick@uni-trier.de"
+RUN mkdir /work
+WORKDIR /work
+COPY ./ /work
 
 ENV TICS_PER_MS=1000
 ENV TICS_PER_STEP=100
@@ -23,10 +27,10 @@ RUN apt-get update && \
     apt-get install -y libgsl-dev libgslcblas0 libltdl-dev && \
     apt-get install -y doxygen wget
 
+# https://apt.kitware.com
 RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
     gpg --dearmor kitware-archive-latest.asc && \
 	mv kitware-archive-latest.asc.gpg /usr/share/keyrings/kitware-archive-keyring.gpg
-
 ADD kitware.list .
 RUN mv kitware.list /etc/apt/sources.list.d
 
@@ -50,12 +54,20 @@ RUN mkdir nest-simulator-3.3/BUILD && \
     make && \
     make install
 
-###################################################################
-#
-# ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/nest
+RUN apt-get update && \
+    apt-get install -y gunicorn python3-gunicorn && \
+    apt-get install -y python3-numpy python3-flask && \
+    apt-get install -y python3-flask-cors python3-restrictedpython && \
+    apt-get install -y mc net-tools
 
-# RUN nest-server start -p 7777 -o
-# RUN mpirun -np 1 nest-server-mpi --host 127.0.0.1 --port 7777
-# RUN nest-server start -h $NEST_SERVER_HOST -p $NEST_SERVER_PORT -d
-# RUN mpirun -np $NUM_WORKERS nest-server-mpi --host $NEST_SERVER_HOST --port $NEST_SERVER_PORT
+RUN ln -s /usr/local/lib/python3.8/site-packages/nest \
+          /usr/local/lib/python3.8/dist-packages
+
+# curl -fsSL https://deb.nodesource.com/setup_18.x
+ADD NodeAptInstall220909.sh .
+RUN bash NodeAptInstall220909.sh && \
+    apt-get install -y nodejs && \
+	npm install --global @vue/cli && \
+	vue --version
+
 
