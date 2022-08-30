@@ -15,17 +15,48 @@ ENV TZ=Europe/Amsterdam
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y g++ && \
-    apt-get install -y python3-dev cython3 && \
-    apt-get install -y openssl libssl-dev && \
-    apt-get install -y build-essential && \
-    apt-get install -y tzdata && \
-    apt-get install -y libreadline-dev && \
-    apt-get install -y mpich && \
-    apt-get install -y libboost1.71-dev && \
-    apt-get install -y libgsl-dev libgslcblas0 libltdl-dev && \
-    apt-get install -y doxygen wget
+RUN apt-get update && apt-get install -y \
+    cython3 \
+    g++ \
+    git \
+    gsl-bin \
+    libboost1.71-dev \
+    libboost-atomic-dev \
+    libboost-chrono-dev \
+    libboost-date-time-dev \
+    libboost-filesystem-dev \
+    libboost-random-dev \
+    libboost-regex-dev \
+    libboost-serialization-dev \
+    libboost-system-dev \
+    libboost-thread-dev \
+    libgsl-dev \
+    libltdl-dev \
+    libopenmpi-dev \
+    libssl-dev \
+    libtool \
+    libwebsocketpp-dev  \
+    make \
+    netcat \
+    ninja-build \
+    openmpi-bin \
+    openssl \
+    pandoc \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    wget \
+    build-essential \
+    doxygen \
+    libgslcblas0 \
+    libreadline-dev \
+    tzdata
+
+RUN python3 -m pip install \
+    flask \
+    flask-cors \
+    RestrictedPython \
+    uwsgi
 
 # https://apt.kitware.com
 RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
@@ -40,24 +71,61 @@ RUN apt-get update && \
 RUN apt-get update && \
     apt-get install -y cmake
 
-RUN wget https://github.com/nest/nest-simulator/archive/refs/tags/v3.3.tar.gz
+RUN wget https://github.com/nest/nest-simulator/archive/refs/tags/v3.2.tar.gz
+RUN wget https://github.com/nest/nest-simulator/releases/download/v3.2/nest-simulator-3.2-p1-VersionNumber.patch
 
-RUN tar fvxz v3.3.tar.gz
-RUN mkdir nest-simulator-3.3/BUILD && \
-    cd nest-simulator-3.3/BUILD && \
-    cmake -Dwith-cpp-std=c++17 \
+
+
+
+RUN tar fvxz v3.2.tar.gz
+RUN mkdir nest-simulator-3.2/BUILD && \
+    cd nest-simulator-3.2 && \
+    patch -p1 < ../nest-simulator-3.2-p1-VersionNumber.patch && \
+    cd BUILD && \
+    cmake  \
+          -G Ninja \
+	      -Dwith-cpp-std=c++17 \
           -DCMAKE_INSTALL_PREFIX:PATH=/usr/local \
           -Dwith-mpi=ON \
+          -Dwith-python=ON \
           -Dtics_per_ms=$TICS_PER_MS \
           -Dtics_per_step=$TICS_PER_STEP \
         .. && \
-    make && \
-    make install
+    ninja && \
+    ninja html && \
+    ninja install
+
+RUN python3 -m pip install \
+    Image \
+    PyYAML>=4.2b1 \
+    csvkit \
+    cython \
+    docutils \
+    example \
+    ipykernel \
+    jupyter \
+    matplotlib \
+    mock \
+    nbsphinx \
+    numpy \
+    numpydoc \
+    path.py \
+    pathlib \
+    pytest \
+    recommonmark \
+    scipy \
+    seaborn \
+    sphinx-tabs \
+    sphinx>=4.0.2 \
+    sphinx_autobuild \
+    sphinx_gallery \
+    sphinx_rtd_theme \
+    statsmodels \
+    tqdm \
+    yamllint
 
 RUN apt-get update && \
     apt-get install -y gunicorn python3-gunicorn && \
-    apt-get install -y python3-numpy python3-flask && \
-    apt-get install -y python3-flask-cors python3-restrictedpython && \
     apt-get install -y mc net-tools
 
 RUN ln -s /usr/local/lib/python3.8/site-packages/nest \
@@ -69,5 +137,3 @@ RUN bash NodeAptInstall220909.sh && \
     apt-get install -y nodejs && \
 	npm install --global @vue/cli && \
 	vue --version
-
-

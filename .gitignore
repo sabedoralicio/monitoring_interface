@@ -138,3 +138,7 @@ __pycache__
 
 # Electron-builder output
 /dist_electron
+
+# Rust
+*.lock
+src/load/target
