@@ -45,12 +45,12 @@ export default defineComponent({
   },
   data() {
     return {
-      nodeURL: "http://127.0.0.1:7777",
+      nodeURL: "http://127.0.0.1:8080",
       nestAPIFunctions: null,
     };
   },
   created() {
-    fetch("http://127.0.0.1:7777/api")
+    fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));	  
   },

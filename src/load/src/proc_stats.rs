@@ -1,30 +1,40 @@
+// use chrono::{Datelike, Timelike, Utc};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Result;
 use std::path::Path;
 use std::{thread, time::Duration};
-use chrono::{Datelike, Timelike, Utc};
+use std::time::{SystemTime, UNIX_EPOCH};
 use crate::types::*;
 
 ///
-pub fn load_stats_of_pids_json(timespan_ns: u64, pids: Vec<PID>) -> JSON {
-    let now = Utc::now();
-    let timestamp = format!("{}-{:02}-{:02} {:02}:{:02}:{:02}",
-                            now.year(), now.month(), now.day(),
-                            now.hour(), now.minute(), now.second());
+pub fn load_stats_of_port_pids_json(timespan_ns: u64, port_pids: Vec<(PortNr,PID)>) -> JSON {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let secs= format!("{:?}", since_the_epoch);
+//    let now = Utc::now();
+//    let timestamp = format!("{}-{:02}-{:02} {:02}:{:02}:{:02}",
+//                            now.year(), now.month(), now.day(),
+//                            now.hour(), now.minute(), now.second());
     let load_stats: Vec<JSON> =
-        pids.iter().map(|pid| json_proc_load(&load_stats_of_process(timespan_ns, pid)))
-                   .collect();
-    format!("{{ timestamp: {}, load_stats: [{}] }}", timestamp, load_stats.join(", "))
+        port_pids.iter()
+                  .map(|(port,pid)| json_proc_load(&load_stats_of_port_process(timespan_ns, port, pid)))
+                  .collect();
+    format!("{{ secs_from_epoch: {}, load_stats: [{}] }}",
+            secs.trim_end_matches('s'), load_stats.join(", "))
 }
 
 ///
-pub fn load_stats_of_pids(timespan_ns: u64, pids: Vec<PID>) -> Vec<ProcLoad> {
-    return pids.iter().map(|pid| load_stats_of_process(timespan_ns, pid)).collect();
+pub fn load_stats_of_port_pids(timespan_ns: u64, pids: Vec<(PortNr,PID)>) -> Vec<ProcLoad> {
+    return pids.iter()
+               .map(|(port,pid)| load_stats_of_port_process(timespan_ns, port, pid))
+               .collect();
 }
 
 ///
-pub fn load_stats_of_process(timespan_ns: u64, pid_: &PID) -> ProcLoad {
+pub fn load_stats_of_port_process(timespan_ns: u64, port_: &PortNr, pid_: &PID) -> ProcLoad {
     let timespan: Duration = Duration::from_nanos(timespan_ns);
     
     let whole_cpu_time_bef: CPUTime = get_total_cpu_time();
@@ -44,7 +54,8 @@ pub fn load_stats_of_process(timespan_ns: u64, pid_: &PID) -> ProcLoad {
     let count: usize = thread::available_parallelism().unwrap().get();
 //    print!("count: {}\n", count);
     let cpu_load: CPULoad = 100.0 * (count as f32) * (cpu_time as f32) / (whole_cpu_time as f32);
-    ProcLoad { pid: proc_t_aft.tid,
+    ProcLoad { port: *port_,
+               pid: *pid_,
                cpu_load: cpu_load,
                mem_kb: proc_t_aft.vm_rss }
 }
