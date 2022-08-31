@@ -27,6 +27,25 @@ pub fn load_stats_of_port_pids_json(timespan_ns: u64, port_pids: Vec<(PortNr,PID
 }
 
 ///
+pub fn load_stats_of_port_pids_code(timespan_ns: u64, port_pids: Vec<(PortNr,PID)>) -> JSON {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let secs= format!("{:?}", since_the_epoch);
+//    let now = Utc::now();
+//    let timestamp = format!("{}-{:02}-{:02} {:02}:{:02}:{:02}",
+//                            now.year(), now.month(), now.day(),
+//                            now.hour(), now.minute(), now.second());
+    let load_stats: Vec<JSON> =
+        port_pids.iter()
+                  .map(|(port,pid)| code_proc_load(&load_stats_of_port_process(timespan_ns, port, pid)))
+                  .collect();
+    format!("{},{}",
+            secs.trim_end_matches('s'), load_stats.join(","))
+}
+
+///
 pub fn load_stats_of_port_pids(timespan_ns: u64, pids: Vec<(PortNr,PID)>) -> Vec<ProcLoad> {
     return pids.iter()
                .map(|(port,pid)| load_stats_of_port_process(timespan_ns, port, pid))

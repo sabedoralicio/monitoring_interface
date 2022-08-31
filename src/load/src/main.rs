@@ -26,7 +26,7 @@ fn main() {
                 let pid_codes: Vec<&str> = args[3].split(',').collect();
                 let port_pids: Vec<(PortNr,PID)> =
                     pid_codes.iter().map(|s| port_pid_of(s)).collect();
-                let json = load_stats_of_port_pids_json(timespan_ns, port_pids);
+                let json = load_stats_of_port_pids_code(timespan_ns, port_pids);
                 println!("{}", json);
             }
             _ => { usage(); }

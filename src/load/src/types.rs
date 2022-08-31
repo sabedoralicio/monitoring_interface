@@ -16,9 +16,19 @@ pub struct ProcLoad {
     pub mem_kb: MemKB   
 }
 
+///
 pub fn json_proc_load(proc_load: &ProcLoad) -> JSON {
     format!("{{ port: {}, pid: {}, cpu_load: {}, mem_kb: {} }}",
 //    format!("{{ cpu_load: {}, mem_kb: {} }}",
+            proc_load.port,
+            proc_load.pid,
+            proc_load.cpu_load,
+            proc_load.mem_kb)
+}
+
+///
+pub fn code_proc_load(proc_load: &ProcLoad) -> JSON {
+    format!("{}:{}:{}:{}",
             proc_load.port,
             proc_load.pid,
             proc_load.cpu_load,
