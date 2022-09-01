@@ -1,16 +1,11 @@
 <template>
-    <core-toolbar />
-    <div file="MonitoringInterface"></div>
-    <v-content>
-      <router-view />
-    </v-content>
-    <v-footer
-    class="bg-blue-lighten-1"
-  >
-    <v-row
-      justify="center"
-      no-gutters
-    >
+  <core-toolbar />
+  <div file="MonitoringInterface"></div>
+  <v-content>
+    <router-view />
+  </v-content>
+  <v-footer class="bg-blue-lighten-1">
+    <v-row justify="center" no-gutters>
       <v-btn
         v-for="link in links"
         :key="link"
@@ -21,11 +16,9 @@
       >
         {{ link }}
       </v-btn>
-      <v-col
-        class="text-center text-white mt-4"
-        cols="12"
-      >
-        {{ new Date().getFullYear() }} — <strong>Co-Simulation Monitoring Interface</strong>
+      <v-col class="text-center text-white mt-4" cols="12">
+        {{ new Date().getFullYear() }} —
+        <strong>Co-Simulation Monitoring Interface</strong>
       </v-col>
     </v-row>
   </v-footer>

@@ -2,11 +2,11 @@ import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import MonitoringInterface from "../views/MonitoringInterface.vue";
 
 const routes: Array<RouteRecordRaw> = [
-//  {
-//    path: "/",
-//    name: "home",
-//    component: MonitoringInterface,
-//  },
+  //  {
+  //    path: "/",
+  //    name: "home",
+  //    component: MonitoringInterface,
+  //  },
   {
     // path: "/backend",
     path: "/",

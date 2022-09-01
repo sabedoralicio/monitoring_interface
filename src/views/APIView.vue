@@ -1,7 +1,7 @@
 <template>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
-  <v-table fixed-header height="300px">
+    <v-table fixed-header height="300px">
       <thead>
         <tr>
           <th class="text-left">Name</th>
@@ -9,15 +9,17 @@
       </thead>
       <tbody>
         <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td><NestAPILinkText :nodeURL="nodeURL" :apiFunction="api_function" /></td>
+          <td>
+            <NestAPILinkText :nodeURL="nodeURL" :apiFunction="api_function" />
+          </td>
           <td>{{ api_function }}</td>
         </tr>
       </tbody>
-  </v-table>
+    </v-table>
   </div>
   <h3>API function names at host {{ nodeURL }}</h3>
   <div id="app">
-  <v-table fixed-header height="900px">
+    <v-table fixed-header height="900px">
       <thead>
         <tr>
           <th class="text-left">Name</th>
@@ -25,10 +27,15 @@
       </thead>
       <tbody>
         <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td><NestAPILinkJsonRaw :nodeURL="nodeURL" :apiFunction="api_function" /></td>
+          <td>
+            <NestAPILinkJsonRaw
+              :nodeURL="nodeURL"
+              :apiFunction="api_function"
+            />
+          </td>
         </tr>
       </tbody>
-  </v-table>
+    </v-table>
   </div>
 </template>
 
@@ -52,7 +59,7 @@ export default defineComponent({
   created() {
     fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
-      .then((data) => (this.nestAPIFunctions = data));	  
+      .then((data) => (this.nestAPIFunctions = data));
   },
 });
 </script>

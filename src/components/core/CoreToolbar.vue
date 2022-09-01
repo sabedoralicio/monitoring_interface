@@ -1,11 +1,29 @@
 <template>
   <v-toolbar app color="#9fcfff" dense>
-    <span @click="drawer = !drawer" >>>></span>
-    <v-btn @click="sidebar = k.sidebar" v-for="k in headerBarKnowledge" :key="k.id" slot="activator" flat
-	  >{{ k.id }}<v-tooltip
-        activator="parent"
-        location="bottom"
-      >{{ k.tooltip }}</v-tooltip></v-btn>
+    <span @click="drawer = !drawer">>>></span>
+    <!--
+    <v-btn
+      @click="sidebar = k.sidebar"
+      v-for="k in headerBarKnowledge"
+      :key="k.id"
+      v-slot="activator"
+      flat
+      >{{ k.id
+      }}<v-tooltip activator="parent" location="bottom">{{
+        k.tooltip
+      }}</v-tooltip></v-btn
+    >
+-->
+    <v-btn
+      @click="sidebar = k.sidebar"
+      v-for="k in headerBarKnowledge"
+      :key="k.id"
+      flat
+      >{{ k.id
+      }}<v-tooltip activator="parent" location="bottom">{{
+        k.tooltip
+      }}</v-tooltip></v-btn
+    >
   </v-toolbar>
 
   <v-navigation-drawer app v-model="drawer" class="primary">
@@ -15,7 +33,6 @@
     <GrafanaWorks v-else-if="sidebar == 3" />
     <HelpWorks v-else />
   </v-navigation-drawer>
-
 </template>
 
 <script lang="ts">
@@ -45,9 +62,20 @@ export default {
 </script>
 
 <style>
-a.button:active { text-decoration: none; color: #FF7F00; }
-a.button:hover { text-decoration: none; color: #FF7F00; }
-a.button:link { text-decoration: none; color: #FF7F00; }
-a.button:visited { text-decoration: none; color: #FF7F00; }
+a.button:active {
+  text-decoration: none;
+  color: #ff7f00;
+}
+a.button:hover {
+  text-decoration: none;
+  color: #ff7f00;
+}
+a.button:link {
+  text-decoration: none;
+  color: #ff7f00;
+}
+a.button:visited {
+  text-decoration: none;
+  color: #ff7f00;
+}
 </style>
-
