@@ -1,4 +1,6 @@
 <template>
+  PINIA ++{{ getCounter() }}++ ++{{ counter }}++
+  <br/>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
     <v-table fixed-header height="1300px">
@@ -32,6 +34,7 @@
 import { defineComponent } from "vue";
 import NestAPILinkJsonRaw from "@/components/NestAPILinkJsonRaw.vue";
 import NestAPILinkText from "@/components/NestAPILinkText.vue";
+import { useCounterStore } from '@/store/index';
 
 export default defineComponent({
   name: "BackendView",
@@ -40,6 +43,9 @@ export default defineComponent({
     NestAPILinkText,
   },
   methods: {
+    getCounter() {
+      return useCounterStore().count;
+    },
     isHtmlErrorMessage(responseString: string): number {
       return responseString.indexOf("<");
     },
@@ -48,12 +54,22 @@ export default defineComponent({
     return {
       nodeURL: "http://127.0.0.1:8080",
       nestAPIFunctions: null,
+	  counter: useCounterStore().count,
     };
   },
   created() {
     fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
+  },
+  setup() {
+    ////const counter = useCounterStore().count;
+
+    ////counter.count++
+    // with autocompletion ✨
+    ////counter.$patch({ count: counter.count + 1 })
+    // or using an action instead
+    ////counter.increment()
   },
 });
 </script>

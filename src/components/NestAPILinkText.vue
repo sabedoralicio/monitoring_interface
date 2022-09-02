@@ -9,6 +9,33 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { useCounterStore } from '@/store/index'
+
+export default defineComponent({
+  name: "NestAPILinkText",
+  props: {
+    nodeURL: String,
+    apiFunction: String,
+  },
+  data() {
+    return {
+      nestAPIFunctionResponse: "",
+    };
+  },
+  methods: {
+    apiFunUrl(nodeURL: string, apiFunction: string) {
+      return nodeURL + "/api/" + apiFunction;
+    },
+    filteredResponse(code: string): string {
+      return showNestResponseLore(asNestResponseLore(code));
+    },
+  },
+  created() {
+    fetch(this.$props.nodeURL + "/api/" + this.$props.apiFunction)
+      .then((response) => response.text())
+      .then((data) => (this.nestAPIFunctionResponse = data));
+  },
+});
 
 enum NestResponseKind {
   CallableSignatureNotSupported,
@@ -150,30 +177,4 @@ function showNestResponseLore(lore: NestResponseLore): string {
     }
   }
 }
-
-export default defineComponent({
-  name: "NestAPILinkText",
-  props: {
-    nodeURL: String,
-    apiFunction: String,
-  },
-  data() {
-    return {
-      nestAPIFunctionResponse: "",
-    };
-  },
-  methods: {
-    apiFunUrl(nodeURL: string, apiFunction: string) {
-      return nodeURL + "/api/" + apiFunction;
-    },
-    filteredResponse(code: string): string {
-      return showNestResponseLore(asNestResponseLore(code));
-    },
-  },
-  created() {
-    fetch(this.$props.nodeURL + "/api/" + this.$props.apiFunction)
-      .then((response) => response.text())
-      .then((data) => (this.nestAPIFunctionResponse = data));
-  },
-});
 </script>
