@@ -1,6 +1,8 @@
 <template>
   PINIA ++{{ getCounter() }}++ ++{{ counter }}++
   <br/>
+  <button @click='upCount'>UPCOUNT</button>
+  <br/>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
     <v-table fixed-header height="1300px">
@@ -45,6 +47,9 @@ export default defineComponent({
   methods: {
     getCounter() {
       return useCounterStore().count;
+    },
+    upCount() {
+      useCounterStore().increment();
     },
     isHtmlErrorMessage(responseString: string): number {
       return responseString.indexOf("<");
