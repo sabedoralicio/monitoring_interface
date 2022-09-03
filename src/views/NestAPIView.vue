@@ -3,6 +3,8 @@
   <br/>
   <button @click='upCount'>UPCOUNT</button>
   <br/>
+  <button @click='stopCount'>STOP</button>
+  <br/>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
     <v-table fixed-header height="1300px">
@@ -48,8 +50,16 @@ export default defineComponent({
     getCounter() {
       return useCounterStore().count;
     },
+    stopCount() {
+      clearInterval(this.counter);
+    },
     upCount() {
       useCounterStore().increment();
+    },
+    upCountEverySecond() {
+      this.counter = setInterval(() => {
+		this.upCount()
+	  }, 1000)
     },
     isHtmlErrorMessage(responseString: string): number {
       return responseString.indexOf("<");
@@ -63,6 +73,7 @@ export default defineComponent({
     };
   },
   created() {
+    this.upCountEverySecond();
     fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
