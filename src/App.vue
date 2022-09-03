@@ -1,21 +1,20 @@
 <template>
   <v-app>
     <v-main>
-      <router-view />
+      <MonitoringInterface />
     </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import MonitoringInterface from "@/views/MonitoringInterface.vue";
 
 export default defineComponent({
   name: "App",
 
-  data() {
-    return {
-      //
-    };
+  components: {
+    MonitoringInterface,
   },
 });
 </script>

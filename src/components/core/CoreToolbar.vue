@@ -13,7 +13,6 @@
         k.tooltip
       }}</v-tooltip></v-btn
     >
--->
     <v-btn
       @click="sidebar = k.sidebar"
       v-for="k in headerBarKnowledge"
@@ -24,6 +23,13 @@
         k.tooltip
       }}</v-tooltip></v-btn
     >
+-->
+    <v-btn
+      @click="sidebar = k.sidebar"
+      v-for="k in headerBarKnowledge"
+      :key="k.id"
+      flat
+      >{{ k.id }}</v-btn>
   </v-toolbar>
 
   <v-navigation-drawer app v-model="drawer" class="primary">
