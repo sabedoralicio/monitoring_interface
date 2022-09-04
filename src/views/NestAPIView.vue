@@ -1,7 +1,7 @@
 <template>
-  PINIA ++{{ getCounter() }}++ ++{{ counter }}++
+  PINIA ++{{ getCounter() }}++ ++{{ counter }}++  @@{{ getLoadCount() }}@@ @@{{ getLoadCode() }}@@
   <br/>
-  <button @click='upCount'>UPCOUNT</button>
+  <button @click='loadTaking'>UPCOUNT</button>
   <br/>
   <button @click='stopCount'>STOP</button>
   <br/>
@@ -60,6 +60,11 @@ export default defineComponent({
     NestAPILinkText,
   },
   methods: {
+    loadTakeEveryMinute() {
+      this.counter = setInterval(() => {
+		this.loadTaking()
+	  }, 60000)
+    },
     loadTaking() {
       let nodeUrl: string = 'http://127.0.0.1:8080/loadLore/';
       fetch(nodeUrl)
@@ -67,14 +72,26 @@ export default defineComponent({
 //        .then((data) => (this.loadLoreTake = data));
         .then((lore) => this.loadAdd(lore));
     },
-    nodeLoadAdd(secsFromEpoch: number, lore: NodeLoadLore) {
-      useLoadTakerStore().takeLoad([secsFromEpoch, lore.portNr], [lore.cpuPercent, lore.memKb]);
-    },
     loadAdd(lore: LoadLore) {
       let secsFromEpoch: number = lore.secsFromEpoch;
 	  for (let node of lore.loadLoreNodes) {
 	    useLoadTakerStore().takeLoad([secsFromEpoch, node.portNr], [node.cpuPercent, node.memKb]);
 	  }
+    },
+    nodeLoadAdd(secsFromEpoch: number, lore: NodeLoadLore) {
+      useLoadTakerStore().takeLoad([secsFromEpoch, lore.portNr], [lore.cpuPercent, lore.memKb]);
+    },
+    getLoadCount() {
+      return useLoadTakerStore().loadTake.size;
+    },
+    getLoadCode() {
+	  let takes= useLoadTakerStore().loadTake.keys();
+	  let takeStrs: string[] = [];
+	  for (let [secs,port] of takes) {
+	    let takeStr = '['+secs+','+port+']';
+	    takeStrs.push(takeStr);
+	  }
+      return takeStrs.toString();
     },
     getCounter() {
       return useCounterStore().count;
@@ -104,6 +121,7 @@ export default defineComponent({
   },
   created() {
     this.upCountEverySecond();
+    this.loadTakeEveryMinute();
     fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
