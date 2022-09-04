@@ -39,6 +39,19 @@ import { defineComponent } from "vue";
 import NestAPILinkJsonRaw from "@/components/NestAPILinkJsonRaw.vue";
 import NestAPILinkText from "@/components/NestAPILinkText.vue";
 import { useCounterStore } from '@/store/index';
+import { useLoadTakerStore } from '@/store/index';
+
+interface NodeLoadLore {
+  portNr: number;
+  pid: number;
+  cpuPercent: number;
+  memKb: number;
+}
+
+interface LoadLore {
+  secsFromEpoch: number;
+  loadLoreNodes: NodeLoadLore[];
+}
 
 export default defineComponent({
   name: "BackendView",
@@ -47,6 +60,22 @@ export default defineComponent({
     NestAPILinkText,
   },
   methods: {
+    loadTaking() {
+      let nodeUrl: string = 'http://127.0.0.1:8080/loadLore/';
+      fetch(nodeUrl)
+        .then((response) => response.json())
+//        .then((data) => (this.loadLoreTake = data));
+        .then((lore) => this.loadAdd(lore));
+    },
+    nodeLoadAdd(secsFromEpoch: number, lore: NodeLoadLore) {
+      useLoadTakerStore().takeLoad([secsFromEpoch, lore.portNr], [lore.cpuPercent, lore.memKb]);
+    },
+    loadAdd(lore: LoadLore) {
+      let secsFromEpoch: number = lore.secsFromEpoch;
+	  for (let node of lore.loadLoreNodes) {
+	    useLoadTakerStore().takeLoad([secsFromEpoch, node.portNr], [node.cpuPercent, node.memKb]);
+	  }
+    },
     getCounter() {
       return useCounterStore().count;
     },
@@ -69,6 +98,7 @@ export default defineComponent({
     return {
       nodeURL: "http://127.0.0.1:8080",
       nestAPIFunctions: null,
+      loadLoreTake: null,
 	  counter: useCounterStore().count,
     };
   },
