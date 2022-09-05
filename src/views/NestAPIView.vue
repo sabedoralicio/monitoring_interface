@@ -5,6 +5,8 @@
   <br/>
   <button @click='stopCount'>STOP</button>
   <br/>
+  <VuePlotly :data="data" :layout="layout" :display-mode-bar="false"></VuePlotly>
+  <br/>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
     <v-table fixed-header height="1300px">
@@ -59,6 +61,7 @@ export default defineComponent({
   components: {
     NestAPILinkJsonRaw,
     NestAPILinkText,
+	VuePlotly,
   },
   methods: {
     loadTakeEveryMinute() {
@@ -118,6 +121,14 @@ export default defineComponent({
       nestAPIFunctions: null,
       loadLoreTake: null,
 	  counter: useCounterStore().count,
+      data:[{
+        x: [1,2,3,4],
+        y: [10,15,13,17],
+        type:"scatter"
+      }],
+      layout:{
+        title: "My graph"
+      }
     };
   },
   created() {
