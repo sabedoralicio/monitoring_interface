@@ -36,6 +36,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { VuePlotly } from "vue3-plotly";
 import NestAPILinkJsonRaw from "@/components/NestAPILinkJsonRaw.vue";
 import NestAPILinkText from "@/components/NestAPILinkText.vue";
 import { useCounterStore } from '@/store/index';
@@ -85,7 +86,7 @@ export default defineComponent({
       return useLoadTakerStore().loadTake.size;
     },
     getLoadCode() {
-	  let takes= useLoadTakerStore().loadTake.keys();
+	  let takes= useLoadTakerStore().loadTake.entries();
 	  let takeStrs: string[] = [];
 	  for (let [secs,port] of takes) {
 	    let takeStr = '['+secs+','+port+']';
@@ -121,7 +122,7 @@ export default defineComponent({
   },
   created() {
     this.upCountEverySecond();
-    this.loadTakeEveryMinute();
+//    this.loadTakeEveryMinute();
     fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
