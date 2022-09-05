@@ -1,11 +1,14 @@
 <template>
-  PINIA ++{{ getCounter() }}++ ++{{ counter }}++  @@{{ getLoadCount() }}@@ @@{{ getLoadCode() }}@@
+  PINIA ++{{ getCounter() }}++ ++{{ counter }}++  @@{{ getLoadCount() }}@@
+  <!-- @@{{ getLoadCode() }}@@ -->
   <br/>
   <button @click='loadTaking'>UPCOUNT</button>
   <br/>
   <button @click='stopCount'>STOP</button>
   <br/>
-  <VuePlotly :data="getChartLore()" :layout="layout" :display-mode-bar="false"></VuePlotly>
+  <VuePlotly :data="getChartLoreCPU()" :layout="cpu_layout" :display-mode-bar="false"></VuePlotly>
+  <br/>
+  <VuePlotly :data="getChartLoreMem()" :layout="mem_layout" :display-mode-bar="false"></VuePlotly>
   <br/>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
@@ -67,7 +70,7 @@ export default defineComponent({
     loadTakeEveryMinute() {
       this.counter = setInterval(() => {
 		this.loadTaking()
-	  }, 60000)
+	  }, 15000)
     },
     loadTaking() {
       let nodeUrl: string = 'http://127.0.0.1:8080/loadLore/';
@@ -88,35 +91,101 @@ export default defineComponent({
     getLoadCount() {
       return useLoadTakerStore().loadTake.size;
     },
-    getChartLore() {
-	  let t = [1,2,3,4];
-	  let a = [10,15,13,17];
-	  let b = [13,17,3,19];
-	  let c = [16,5,11,9];
-	  let d = [21,11,7,1];
+    getChartLoreCPU() {
+	  let ta: number[] = [];
+	  let tb: number[] = [];
+	  let tc: number[] = [];
+	  let td: number[] = [];
+	  let a: number[] = [];
+	  let b: number[] = [];
+	  let c: number[] = [];
+	  let d: number[] = [];
+	  let entries= useLoadTakerStore().loadTake.entries();
+	  for (let [[secs,port],[cpuPerc,memKB]] of entries) {
+	    if (port==9000) {
+		  ta.push(secs); a.push(cpuPerc);
+		} else if (port==9001) {
+		  tb.push(secs); b.push(cpuPerc);
+		} else if (port==9002) {
+		  tc.push(secs); c.push(cpuPerc);
+		} else {
+		  td.push(secs); d.push(cpuPerc);
+		}
+	  }
 	  let pathA = {
-        x: t,
+        x: ta,
         y: a,
         type:"scatter",
         line: { shape: 'spline', dash: 'dot', width: 4 },
 		name: 'port 9000',
       };
 	  let pathB = {
-        x: t,
+        x: tb,
         y: b,
         type:"scatter",
         line: { shape: 'spline', dash: 'dot', width: 4 },
 		name: 'port 9001',
       };
 	  let pathC = {
-        x: t,
+        x: tc,
         y: c,
         type:"scatter",
         line: { shape: 'spline', dash: 'dot', width: 4 },
 		name: 'port 9002',
       };
 	  let pathD = {
-        x: t,
+        x: td,
+        y: d,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9003',
+      };
+      return [pathA, pathB, pathC, pathD];
+    },
+    getChartLoreMem() {
+	  let ta: number[] = [];
+	  let tb: number[] = [];
+	  let tc: number[] = [];
+	  let td: number[] = [];
+	  let a: number[] = [];
+	  let b: number[] = [];
+	  let c: number[] = [];
+	  let d: number[] = [];
+	  let entries= useLoadTakerStore().loadTake.entries();
+	  for (let [[secs,port],[cpuPerc,memKB]] of entries) {
+	    if (port==9000) {
+		  ta.push(secs); a.push(memKB);
+		} else if (port==9001) {
+		  tb.push(secs); b.push(memKB);
+		} else if (port==9002) {
+		  tc.push(secs); c.push(memKB);
+		} else {
+		  td.push(secs); d.push(memKB);
+		}
+	  }
+	  let pathA = {
+        x: ta,
+        y: a,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9000',
+      };
+	  let pathB = {
+        x: tb,
+        y: b,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9001',
+      };
+	  let pathC = {
+        x: tc,
+        y: c,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9002',
+      };
+	  let pathD = {
+        x: td,
         y: d,
         type:"scatter",
         line: { shape: 'spline', dash: 'dot', width: 4 },
@@ -125,7 +194,7 @@ export default defineComponent({
       return [pathA, pathB, pathC, pathD];
     },
     getLoadCode() {
-	  let takes= useLoadTakerStore().loadTake.entries();
+	  let takes= useLoadTakerStore().loadTake.keys();
 	  let takeStrs: string[] = [];
 	  for (let [secs,port] of takes) {
 	    let takeStr = '['+secs+','+port+']';
@@ -157,14 +226,18 @@ export default defineComponent({
       nestAPIFunctions: null,
       loadLoreTake: null,
 	  counter: useCounterStore().count,
-      layout:{
+      cpu_layout:{
         title: "CPU % Load Chart"
+      },
+      mem_layout:{
+        title: "Memory kB Load Chart"
       }
     };
   },
   created() {
     this.upCountEverySecond();
-//    this.loadTakeEveryMinute();
+	this.loadTaking();
+    this.loadTakeEveryMinute();
     fetch("http://127.0.0.1:8080/nest/nodes")
       .then((response) => response.json())
       .then((data) => (this.nestAPIFunctions = data));
