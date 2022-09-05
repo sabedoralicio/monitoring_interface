@@ -5,7 +5,7 @@
   <br/>
   <button @click='stopCount'>STOP</button>
   <br/>
-  <VuePlotly :data="data" :layout="layout" :display-mode-bar="false"></VuePlotly>
+  <VuePlotly :data="getChartLore()" :layout="layout" :display-mode-bar="false"></VuePlotly>
   <br/>
   <h3>API function names, response texts at host {{ nodeURL }}</h3>
   <div id="app">
@@ -88,6 +88,42 @@ export default defineComponent({
     getLoadCount() {
       return useLoadTakerStore().loadTake.size;
     },
+    getChartLore() {
+	  let t = [1,2,3,4];
+	  let a = [10,15,13,17];
+	  let b = [13,17,3,19];
+	  let c = [16,5,11,9];
+	  let d = [21,11,7,1];
+	  let pathA = {
+        x: t,
+        y: a,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9000',
+      };
+	  let pathB = {
+        x: t,
+        y: b,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9001',
+      };
+	  let pathC = {
+        x: t,
+        y: c,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9002',
+      };
+	  let pathD = {
+        x: t,
+        y: d,
+        type:"scatter",
+        line: { shape: 'spline', dash: 'dot', width: 4 },
+		name: 'port 9003',
+      };
+      return [pathA, pathB, pathC, pathD];
+    },
     getLoadCode() {
 	  let takes= useLoadTakerStore().loadTake.entries();
 	  let takeStrs: string[] = [];
@@ -121,17 +157,8 @@ export default defineComponent({
       nestAPIFunctions: null,
       loadLoreTake: null,
 	  counter: useCounterStore().count,
-      data: [{
-        x: [1,2,3.14,4],
-        y: [10,15,13,17],
-        type:"scatter"
-      },{
-        x: [1,2,2.72,4],
-        y: [16,5,11,9],
-        type:"scatter"
-      }],
       layout:{
-        title: "My graph"
+        title: "CPU % Load Chart"
       }
     };
   },
