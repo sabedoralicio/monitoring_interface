@@ -121,9 +121,13 @@ export default defineComponent({
       nestAPIFunctions: null,
       loadLoreTake: null,
 	  counter: useCounterStore().count,
-      data:[{
-        x: [1,2,3,4],
+      data: [{
+        x: [1,2,3.14,4],
         y: [10,15,13,17],
+        type:"scatter"
+      },{
+        x: [1,2,2.72,4],
+        y: [16,5,11,9],
         type:"scatter"
       }],
       layout:{
