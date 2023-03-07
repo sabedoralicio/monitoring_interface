@@ -1,68 +1,62 @@
-<template>
-  <v-toolbar app color="#9fcfff" dense>
-    <span @click="drawer = !drawer">>>></span>
-    <v-btn
-      @click="sidebar = k.sidebar"
-      v-for="k in headerBarKnowledge"
-      :key="k.id"
-      flat
-      >{{ k.id
-      }}<v-tooltip activator="parent" location="bottom">{{
-        k.tooltip
-      }}</v-tooltip></v-btn
-    >
-  </v-toolbar>
-
-  <v-navigation-drawer app v-model="drawer" class="primary">
-    <BackendWorks v-if="sidebar == 0" />
-    <SelectionWorks v-else-if="sidebar == 1" />
-    <ViewWorks v-else-if="sidebar == 2" />
-    <GrafanaWorks v-else-if="sidebar == 3" />
-    <HelpWorks v-else />
-  </v-navigation-drawer>
-</template>
-
-<script lang="ts">
-import BackendWorks from "@/components/BackendWorks.vue";
-import SelectionWorks from "@/components/SelectionWorks.vue";
-import ViewWorks from "@/components/ViewWorks.vue";
-import GrafanaWorks from "@/components/GrafanaWorks.vue";
-import HelpWorks from "@/components/HelpWorks.vue";
-import { headerBarKnowledge } from "@/assets/HeaderBarKnowledge.json";
+<!-- Header bar, allowing to open & close left menu. -->
+<script lang='ts'>
+import LeftSideBar from '@/components/LeftSideBar.vue';
+import { viewGridKnowledge } from '@/assets/ViewGridKnowledge.json';
 
 export default {
   components: {
-    BackendWorks,
-    SelectionWorks,
-    ViewWorks,
-    GrafanaWorks,
-    HelpWorks,
+	  LeftSideBar,
   },
   data() {
     return {
-      drawer: false,
-      sidebar: 4,
-      headerBarKnowledge: headerBarKnowledge,
+		showing_left_drawer: false, // true, // left menu drawer at begin is shut
+      sidebar_col: 4,
+      viewGridKnowledge: viewGridKnowledge,
     };
   },
 };
 </script>
 
+<template>
+<v-toolbar app color='#9fcfff' dense>
+<!--
+    <span @click='showing_left_drawer = !showing_left_drawer'>>>></span>
+-->
+    <v-btn
+      @click='sidebar_col = k.sidebar_col'
+      v-for='k in viewGridKnowledge'
+      :key='k.id'
+      flat
+      >{{ k.id
+      }}<v-tooltip activator='parent' location='bottom'>{{
+        k.tooltip
+      }}</v-tooltip></v-btn
+    >
+  </v-toolbar>
+
+<!-- v-model='showing_left_drawer' needed for changing left drawer -->
+<!--
+  <v-navigation-drawer app v-model='showing_left_drawer' class='primary'>
+	<LeftSideBar :links='viewGridKnowledge[sidebar_col].links' />
+  </v-navigation-drawer>
+-->
+</template>
+
 <style>
 a.button:active {
   text-decoration: none;
   color: #ff7f00;
-}
+};
 a.button:hover {
   text-decoration: none;
   color: #ff7f00;
-}
+};
 a.button:link {
   text-decoration: none;
   color: #ff7f00;
-}
+};
 a.button:visited {
   text-decoration: none;
   color: #ff7f00;
-}
+};
 </style>

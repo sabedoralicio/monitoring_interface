@@ -1,0 +1,41 @@
+{
+  "count": 5,
+  "viewGridKnowledge": [
+        { "id": "Backend", "sidebar_col": 0, "path": "/", "items": ["Nest Server", "Insite"],
+		  "tooltip": "Physical node access",
+		  "links": [ { "url": "/", "name": "Backend Backend"}
+				   , { "url": "/nest_api", "name": "Nest API"}
+				   , { "url": "/selection", "name": "Backend Selection"}
+				   , { "url": "/view", "name": "Backend View"}
+				   , { "url": "/grafana", "name": "Backend Grafana"}
+				   , { "url": "/help", "name": "Backend Help"} ] },
+        { "id": "Selection", "sidebar_col": 1, "path": "/selection", "items": ["Neurons", "Synapses"],
+		  "tooltip": "Neural model access",
+		  "links": [ { "url": "/", "name": "Selection Backend"}
+				   , { "url": "/selection", "name": "Selection Selection"}
+				   , { "url": "/view", "name": "Selection View"}
+				   , { "url": "/grafana", "name": "Selection Grafana"}
+				   , { "url": "/help", "name": "Selection Help"} ] },
+        { "id": "View", "sidebar_col": 2, "path": "/view", "items": ["Weighting A", "Weighting B"],
+		  "tooltip": "Composition of overall advice",
+		  "links": [ { "url": "/", "name": "View Backend"}
+				   , { "url": "/selection", "name": "View Selection"}
+				   , { "url": "/view", "name": "View View"}
+				   , { "url": "/grafana", "name": "View Grafana"}
+				   , { "url": "/help", "name": "View Help"} ] },
+        { "id": "Grafana", "sidebar_col": 3, "path": "/grafana", "items": ["Grafana A", "Grafana B"],
+		  "tooltip": "Additional adornment",
+		  "links": [ { "url": "/", "name": "Grafana Backend"}
+				   , { "url": "/selection", "name": "Grafana Selection"}
+				   , { "url": "/view", "name": "Grafana View"}
+				   , { "url": "/grafana", "name": "Grafana Grafana"}
+				   , { "url": "/help", "name": "Grafana Help"} ] },
+      { "id": "Help", "sidebar_col": 4, "path": "/help", "items": ["Doc", "About"],
+		"tooltip": "Non process related support.",
+		"links": [ { "url": "/", "name": "Help Backend"}
+				 , { "url": "/selection", "name": "Help Selection"}
+				 , { "url": "/view", "name": "Help View"}
+				 , { "url": "/grafana", "name": "Help Grafana"}
+				 , { "url": "/help", "name": "Help Help"} ] }
+  ]
+}

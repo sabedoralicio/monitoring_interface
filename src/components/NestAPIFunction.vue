@@ -1,17 +1,6 @@
-<template>
-  <div id="app">
-    <b>{{ apiFunction }} [{{ nodeURL }}]: {{ errorMessage }}</b
-    >:
-  </div>
-  {{ nestAPIFunctionYield }}
-  <div class="card-body">
-    <b>{{ errorMessage }}</b>
-  </div>
-</template>
-
 <script>
 export default {
-  name: "NestAPIFunction",
+  name: 'NestAPIFunction',
   props: {
     nodeURL: String,
     apiFunction: String,
@@ -23,7 +12,7 @@ export default {
     };
   },
   created() {
-    fetch(this.$props.nodeURL + "/api/" + this.$props.apiFunction)
+    fetch(this.$props.nodeURL + '/api/' + this.$props.apiFunction)
       .then(async (response) => {
         const data = await response.json();
         this.nestAPIFunctionYield = data;
@@ -37,8 +26,19 @@ export default {
       })
       .catch((error) => {
         this.errorMessage = error;
-        console.error("There was an error!", error);
+        console.error('There was an error!', error);
       });
   },
 };
 </script>
+
+<template>
+  <div id='app'>
+    <b>{{ apiFunction }} [{{ nodeURL }}]: {{ errorMessage }}</b
+    >:
+  </div>
+  {{ nestAPIFunctionYield }}
+  <div class='card-body'>
+    <b>{{ errorMessage }}</b>
+  </div>
+</template>

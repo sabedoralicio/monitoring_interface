@@ -1,3 +1,14 @@
+<template>
+  TICKS ++{{ getCounter() }}++ ++{{ counter }}++  @@{{ getLoadCount() }}@@
+  <!-- @@{{ getLoadCode() }}@@ -->
+  <br/>
+  <button @click='loadTaking'>UPCOUNT</button>
+  <br/>
+  <button @click='stopCount'>STOP</button>
+  <br/>
+  <VuePlotly :data="getChartLoreMem()" :layout="mem_layout" :display-mode-bar="false"></VuePlotly>
+</template>
+
 <script lang="ts">
 import { defineComponent } from "vue";
 import { VuePlotly } from "vue3-plotly";
@@ -6,16 +17,16 @@ import NestAPILinkText from "@/components/NestAPILinkText.vue";
 import { useCounterStore } from '@/store/index';
 import { useProcLoadTakerStore } from '@/store/load';
 
-interface NodeLoadLore {
+interface NodeProcLoadLore {
   portNr: number;
   pid: number;
   cpuPercent: number;
   memKb: number;
 }
 
-interface LoadLore {
+interface ProcLoadLore {
   secsFromEpoch: number;
-  loadLoreNodes: NodeLoadLore[];
+  loadLoreNodes: NodeProcLoadLore[];
 }
 
 export default defineComponent({
@@ -38,74 +49,17 @@ export default defineComponent({
 //        .then((data) => (this.loadLoreTake = data));
         .then((lore) => this.loadAdd(lore));
     },
-    loadAdd(lore: LoadLore) {
+    loadAdd(lore: ProcLoadLore) {
       let secsFromEpoch: number = lore.secsFromEpoch;
 	  for (let node of lore.loadLoreNodes) {
 	    useProcLoadTakerStore().takeLoad([secsFromEpoch, node.portNr], [node.cpuPercent, node.memKb]);
 	  }
     },
-    nodeLoadAdd(secsFromEpoch: number, lore: NodeLoadLore) {
+    nodeLoadAdd(secsFromEpoch: number, lore: NodeProcLoadLore) {
       useProcLoadTakerStore().takeLoad([secsFromEpoch, lore.portNr], [lore.cpuPercent, lore.memKb]);
     },
     getLoadCount() {
       return useProcLoadTakerStore().loadTake.size;
-    },
-    getChartLoreCPU() {
-		let is_begin: boolean = true;
-		let begin_secs: number = 0;
-		let ta: number[] = [];
-		let tb: number[] = [];
-		let tc: number[] = [];
-		let td: number[] = [];
-		let a: number[] = [];
-		let b: number[] = [];
-		let c: number[] = [];
-		let d: number[] = [];
-		let entries= useProcLoadTakerStore().loadTake.entries();
-		for (let [[secs,port],[cpuPerc,memKB]] of entries) {
-			if(is_begin){
-				begin_secs= secs;
-				is_begin= false;
-			}
-			if (port==9000) {
-				ta.push(secs-begin_secs); a.push(cpuPerc);
-			} else if (port==9001) {
-				tb.push(secs-begin_secs); b.push(cpuPerc);
-			} else if (port==9002) {
-				tc.push(secs-begin_secs); c.push(cpuPerc);
-			} else {
-				td.push(secs-begin_secs); d.push(cpuPerc);
-			}
-	  }
-	  let pathA = {
-        x: ta,
-        y: a,
-        type:"scatter",
-        line: { shape: 'spline', dash: 'dot', width: 4 },
-		name: 'port 9000',
-      };
-	  let pathB = {
-        x: tb,
-        y: b,
-        type:"scatter",
-        line: { shape: 'spline', dash: 'dot', width: 4 },
-		name: 'port 9001',
-      };
-	  let pathC = {
-        x: tc,
-        y: c,
-        type:"scatter",
-        line: { shape: 'spline', dash: 'dot', width: 4 },
-		name: 'port 9002',
-      };
-	  let pathD = {
-        x: td,
-        y: d,
-        type:"scatter",
-        line: { shape: 'spline', dash: 'dot', width: 4 },
-		name: 'port 9003',
-      };
-      return [pathA, pathB, pathC, pathD];
     },
     getChartLoreMem() {
 		let is_begin: boolean = true;
@@ -194,76 +148,26 @@ export default defineComponent({
   data() {
     return {
       accessNodeURL: "http://127.0.0.1:8080",
-      nestAPIFunctions: null,
       loadLoreTake: null,
 	  counter: useCounterStore().count,
-      cpu_layout:{
-        title: "CPU % Load Chart"
-      },
       mem_layout:{
-        title: "Memory kB Load Chart"
+        title: "Memory kB Load Chart All"
       }
     };
   },
-	/** Init code, being run once at beginning:
-     */
-	created() {
-		this.upCountEverySecond();
-		this.loadTaking();
-		this.loadTakeEveryMinute();
-		fetch("http://127.0.0.1:8080/nest/nodes")
-			.then((response) => response.json())
-			.then((data) => (this.nestAPIFunctions = data));
-	},
-	setup() {
-		////const counter = useCounterStore().count;
+  created() {
+    this.upCountEverySecond();
+	this.loadTaking();
+    this.loadTakeEveryMinute();
+  },
+  setup() {
+    ////const counter = useCounterStore().count;
 
-		////counter.count++
-		// with autocompletion ✨
-		////counter.$patch({ count: counter.count + 1 })
-		// or using an action instead
-		////counter.increment()
-	},
+    ////counter.count++
+    // with autocompletion ✨
+    ////counter.$patch({ count: counter.count + 1 })
+    // or using an action instead
+    ////counter.increment()
+  },
 });
 </script>
-
-<template>
-  TICKS ++{{ getCounter() }}++ ++{{ counter }}++  @@{{ getLoadCount() }}@@
-  <!-- @@{{ getLoadCode() }}@@ -->
-  <br/>
-  <button @click='loadTaking'>UPCOUNT</button>
-  <br/>
-  <button @click='stopCount'>STOP</button>
-  <br/>
-  <VuePlotly :data="getChartLoreCPU()" :layout="cpu_layout" :display-mode-bar="false"></VuePlotly>
-  <br/>
-  <VuePlotly :data="getChartLoreMem()" :layout="mem_layout" :display-mode-bar="false"></VuePlotly>
-  <br/>
-  <h3>API function names, response texts at host {{ accessNodeURL }}</h3>
-  <div id="app">
-    <v-table fixed-header height="1300px">
-      <tbody>
-        <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td>
-            <NestAPILinkText :nodeURL="accessNodeURL" :apiFunction="api_function" />
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
-  </div>
-  <h3>API function names at host {{ accessNodeURL }}</h3>
-  <div id="app">
-    <v-table fixed-header height="900px">
-      <tbody>
-        <tr v-for="api_function in nestAPIFunctions" :key="api_function">
-          <td>
-            <NestAPILinkJsonRaw
-              :nodeURL="accessNodeURL"
-              :apiFunction="api_function"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
-  </div>
-</template>

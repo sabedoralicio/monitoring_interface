@@ -1,0 +1,2634 @@
+diff -ruN insite-1.1.0/access-node/access_node/controllers/nest_controller.py NEW/access-node/access_node/controllers/nest_controller.py
+--- insite-1.1.0/access-node/access_node/controllers/nest_controller.py	2022-02-17 12:31:31.000000000 +0100
++++ NEW/access-node/access_node/controllers/nest_controller.py	2023-02-27 12:41:52.014913957 +0100
+@@ -12,12 +12,27 @@
+ from access_node.models.multimeter_measurement import MultimeterMeasurement  # noqa: E501
+ from access_node.models.simulation_time_info import SimulationTimeInfo  # noqa: E501
+ from access_node.models.spikes import Spikes  # noqa: E501
++from access_node.models.ring_buffer_size_lore import RingBufferSizeLore  # noqa: E501
++from access_node.models.node_ring_buffer_size_lore import NodeRingBufferSizeLore
++from access_node.models.spike_count_lore import SpikeCountLore  # noqa: E501
++from access_node.models.node_spike_count_lore import NodeSpikeCountLore
+ 
+ from access_node.models.simulation_nodes import simulation_nodes
+ 
+ 
++def nest_get_num_processes(url):  # noqa: E501
++    """Retrieves the number of MPI threads running.
++
++     # noqa: E501
++
++
++    :rtype: int
++    """
++    kernel_status = requests.get(url+"/kernelStatus").json()
++    return int(kernel_status['num_processes'])
++
+ def nest_get_kernel_status():  # noqa: E501
+-    """Retreives the current status of the NEST kernel.
++    """Retrieves the current status of the NEST kernel.
+ 
+      # noqa: E501
+ 
+@@ -31,7 +46,7 @@
+ 
+ 
+ def nest_get_multimeter_by_id(multimeter_id):  # noqa: E501
+-    """Retreives the available multimeters and their properties.
++    """Retrieves the available multimeters and their properties.
+ 
+      # noqa: E501
+ 
+@@ -347,6 +362,7 @@
+     node_id_list = []
+     lastFrame =  False
+ 
++    print('nest_get_spikes ',simulation_nodes.nest_simulation_nodes)
+     for node in simulation_nodes.nest_simulation_nodes:
+         if node_ids is not None:
+             node_id_param = ",".join(map(str, node_ids))        
+@@ -488,3 +504,100 @@
+     json_string = orjson.dumps({"nodeIds":spikes.node_ids,"simulationTimes":spikes.simulation_times, "lastFrame":lastFrame})
+     return ConnexionResponse(status_code=200,content_type='application/json', mimetype='text/plain', body=json_string)
+ 
++def nest_get_spike_count_for_last(duration=10000):  # noqa: E501
++    """??.
++
++     # noqa: E501
++
++    :param duration: The duration backwards from call time to count spikes on.
++    :type from_time: float
++
++    :rtype: SpikeCount  
++    """
++    app = connexion.FlaskApp(__name__)
++    callTime = -1
++    spikeCount = -1
++
++    node0 = simulation_nodes.nest_simulation_nodes[0]
++    response = requests.get(node0+"/ringBufferSize")
++    response = orjson.loads(response.content)
++    callTime = response["callTime"]
++    print('DURATION ',duration)
++    spike_count_nodes_ = list(map((lambda url: node_spike_count_lore_by(duration,url)),
++                                  simulation_nodes.nest_simulation_nodes))
++    spike_count_lore = SpikeCountLore(call_time=callTime,
++                                      spike_count_nodes=spike_count_nodes_)
++    return spike_count_lore, 200
++    error = Error(code ="SpikeCountNoLore",
++                  message = "Unable to read SpikeCountLore of simulation nodes")
++    error_response = ErrorResponse(error)
++    return error_response, 500
++
++def nest_get_ring_buffer_size():  # noqa: E501
++    """??.
++
++     # noqa: E501
++
++    :param duration: The duration backwards from call time to count spikes on.
++    :type from_time: float
++
++    :rtype:  
++    """
++    app = connexion.FlaskApp(__name__)
++    callTime = -1
++    ringBufferSize = -1
++
++    node0 = simulation_nodes.nest_simulation_nodes[0]
++    response = requests.get(node0+"/ringBufferSize")
++    response = orjson.loads(response.content)
++    callTime = response["callTime"]
++    
++    ring_buffer_size_nodes_ = list(map(node_ring_buffer_size_lore_by,
++                                       simulation_nodes.nest_simulation_nodes))
++    ring_buffer_size_lore = RingBufferSizeLore(call_time=callTime,
++                                               ring_buffer_size_nodes=ring_buffer_size_nodes_)
++    return ring_buffer_size_lore, 200
++    error = Error(code ="RingBufferSizeNoLore",
++                  message = "Unable to read RingBufferSizeLore of simulation nodes")
++    error_response = ErrorResponse(error)
++    return error_response, 500
++
++def node_ring_buffer_size_lore_by(node_url):
++    """Returns lore about the simulation node's spike count.
++
++     # noqa: E501
++
++
++    :rtype: NodeRingBufferSizeLore
++    """
++    load_lore_tokens = node_url.split(':')
++    port_nr_ = int(load_lore_tokens[2])
++    response = requests.get(node_url+"/ringBufferSize")
++    response = orjson.loads(response.content)
++    ring_buffer_size_ = response["ringBufferSize"]
++    secs_since_epoch_ = response["secsSinceEpoch"]
++    return NodeRingBufferSizeLore(port_nr=port_nr_,
++                                  ring_buffer_size=ring_buffer_size_,
++                                  secs_since_epoch=secs_since_epoch_)
++
++def node_spike_count_lore_by(duration, node_url):
++    """Returns lore about the simulation node's spike count.
++
++     # noqa: E501
++
++
++    :rtype: NodeSpikeCountLore
++    """
++#    print('duration ',duration)
++#    print('node_url ',node_url)
++    load_lore_tokens = node_url.split(':')
++    port_nr_ = int(load_lore_tokens[2])
++    response = requests.get(node_url+"/spikeCountForLast", params={"duration": duration})
++#    response = requests.get(node_url+"/spikeCountForLast")
++    response = orjson.loads(response.content)
++#    print('RESPONSE ',response)
++    spike_count_ = response["spikeCount"]
++    secs_since_epoch_ = response["secsSinceEpoch"]
++    return NodeSpikeCountLore(port_nr=port_nr_,
++                              spike_count=spike_count_,
++                              secs_since_epoch=secs_since_epoch_)
+diff -ruN insite-1.1.0/access-node/access_node/controllers/version_controller.py NEW/access-node/access_node/controllers/version_controller.py
+--- insite-1.1.0/access-node/access_node/controllers/version_controller.py	2022-02-17 12:31:31.000000000 +0100
++++ NEW/access-node/access_node/controllers/version_controller.py	2023-01-26 08:32:39.709666078 +0100
+@@ -1,14 +1,19 @@
+ import connexion
++import os
+ import six
+ 
+ from access_node.models.error import Error  # noqa: E501
+ from access_node.models.error_response import ErrorResponse  # noqa: E501
+-from access_node.models.version import Version  # noqa: E501
++from access_node.models.load_lore import LoadLore  # noqa: E501
++from access_node.models.node_load_lore import NodeLoadLore
++from access_node.models.simulation_nodes import simulation_nodes
+ from access_node import util
+ 
+ import os
+ import json
+ 
++TIMESPAN_NS = 500000000
++
+ def get_version():  # noqa: E501
+     """Returns the deployed insite and API versions.
+ 
+@@ -29,3 +34,46 @@
+     error = Error(code ="NoVersion", message = "Unable to read version from file")
+     error_response = ErrorResponse(error)
+     return error_response, 500
++
++def node_load_lore_by(node_load_lore_code):
++    """Returns lore about the simulation node's CPU/memory load (at present localhost only).
++
++     # noqa: E501
++
++
++    :rtype: NodeLoadLore
++    """
++    load_lore_tokens = node_load_lore_code.split(':')
++    port_nr_ = int(load_lore_tokens[0])
++    pid_ = int(load_lore_tokens[1])
++    cpu_percent_ = float(load_lore_tokens[2])
++    mem_kb_ = float(load_lore_tokens[3])
++    return NodeLoadLore(port_nr=port_nr_,
++                        pid=pid_,
++                        cpu_percent=cpu_percent_,
++                        mem_kb=mem_kb_)
++    
++
++def get_load_lore():  # noqa: E501
++    """Returns lore about the simulation nodes' CPU/memory load (at present localhost only).
++
++     # noqa: E501
++
++
++    :rtype: LoadLore
++    """
++    port_pid_dictionary = simulation_nodes.pid_dictionary
++    pair_join = lambda pp: "{}:{}".format(pp[0],pp[1])
++    port_pid_code = ','.join(list(map(pair_join, port_pid_dictionary.items())))
++    port_pid_query = 'proc-lore loads {} {}'.format(TIMESPAN_NS, port_pid_code)
++    response = os.popen(port_pid_query)
++    load_lore = [l.strip() for l in response][0].split(',')
++#    print('§', load_lore)
++    secs_from_epoch_ = float(load_lore[0])
++    load_lore_nodes_ = list(map(node_load_lore_by, load_lore[1:]))   
++#    print('@ ',secs_from_epoch_,' § ', load_lore_nodes_)
++    load_lore = LoadLore(secs_from_epoch=secs_from_epoch_,load_lore_nodes=load_lore_nodes_)
++    return load_lore, 200
++    error = Error(code ="NoLoadLore", message = "Unable to read CPU/memory loads of simulation nodes")
++    error_response = ErrorResponse(error)
++    return error_response, 500
+diff -ruN insite-1.1.0/access-node/access_node/__main__.py NEW/access-node/access_node/__main__.py
+--- insite-1.1.0/access-node/access_node/__main__.py	2022-02-17 12:31:31.000000000 +0100
++++ NEW/access-node/access_node/__main__.py	2023-02-27 13:28:19.025103619 +0100
+@@ -1,28 +1,75 @@
+ #!/usr/bin/env python3
+ 
+ import connexion
++import os
+ import sys
+ 
+ from flask_cors import CORS
+ from access_node import encoder
+ 
++from access_node.controllers.nest_controller import nest_get_num_processes
+ from access_node.models.simulation_nodes import simulation_nodes
+ 
++NEST_MODULE_URL_PATH = 'simulation_nodes.txt'
+ 
+-def load_simulation_nodes(path):
++def at_localhost(url):
++    """
++    """
++    return url.startswith('http://127.0.0.1:') or url.startswith('http://localhost:')
++
++def portnr_of_url(url):
++    """
++    """
++    return url.split(':')[2]
++
++def load_pid_dictionary():
++    """
++    """
++    # print("simulation_nodes.nest_simulation_nodes: ", simulation_nodes.nest_simulation_nodes)
++    # port_nrs = ','.join(map(portnr_of_url, filter(at_localhost, simulation_nodes.nest_simulation_nodes)))
++    port_nrs = ','.join([str(9000+n) for n in range(13)])
++    # print("port_nrs: ", port_nrs)
++    query = 'proc-lore pids {}'.format(port_nrs)
++    print("query: ", query)
++    response = os.popen(query)
++    # print("response: ", response)
++    response_codes = [l.strip() for l in response]
++    if response_codes == []:
++        print("! NO RESPONSE CODES GOT")
++        exit(1)
++    else:
++        pid_lore_code = response_codes[0]
++        pid_lore_tokens = [c.split(':') for c in pid_lore_code.split(',')]
++        simulation_nodes.pid_dictionary = { int(pp[0]):int(pp[1]) for pp in pid_lore_tokens }
++
++        
++def load_simulation_nodes():
++    """
++    """
++    url0 = '??'
+     try:
+-        with open(path) as simulation_nodes_file:
+-            for simulation_node in simulation_nodes_file:
+-                nodes.nest_simulation_nodes.append(simulation_node.rstrip('\n'))
++        with open(NEST_MODULE_URL_PATH) as code:
++            url0 = code.readline().rstrip('\n')
+     except:
+-        pass
++        print("! COULD NOT READ NEST MODULE URL: ",NEST_MODULE_URL_PATH)
++        exit(1)
++    num_processes = nest_get_num_processes(url0)
++    print('NUM PROCESSES: ',num_processes)
++    toks = url0.split(':')
++    url_prefix = ':'.join(toks[:2])
++    port0 = int(toks[2])
++    simulation_nodes.nest_simulation_nodes = [ ':'.join([url_prefix,format(port0+n,'')])
++                                               for n in range(num_processes) ]
+ 
+ def main():
+     if len(sys.argv) == 1:
+-        load_simulation_nodes("simulation_nodes.txt")
++        load_simulation_nodes()
+     else:
+         simulation_nodes.nest_simulation_nodes = sys.argv[1:]
+ 
++    load_pid_dictionary()
++#    print('@@@ ', simulation_nodes.pid_dictionary)
++
+     app = connexion.App("access_node", specification_dir='./openapi/')
+     CORS(app.app)
+ 
+diff -ruN insite-1.1.0/access-node/access_node/models/__init__.py NEW/access-node/access_node/models/__init__.py
+--- insite-1.1.0/access-node/access_node/models/__init__.py	2022-02-17 12:31:31.000000000 +0100
++++ NEW/access-node/access_node/models/__init__.py	2022-08-31 20:48:24.000000000 +0200
+@@ -6,6 +6,7 @@
+ from access_node.models.error import Error
+ from access_node.models.error_response import ErrorResponse
+ from access_node.models.inner_error import InnerError
++from access_node.models.load_lore import LoadLore
+ from access_node.models.multimeter_info import MultimeterInfo
+ from access_node.models.multimeter_measurement import MultimeterMeasurement
+ from access_node.models.nest_kernel_status import NestKernelStatus
+@@ -13,6 +14,7 @@
+ from access_node.models.nest_node_collection_properties import NestNodeCollectionProperties
+ from access_node.models.nest_node_model import NestNodeModel
+ from access_node.models.nest_node_properties import NestNodeProperties
++from access_node.models.node_load_lore import NodeLoadLore
+ from access_node.models.simulation_time_info import SimulationTimeInfo
+ from access_node.models.spikedetector_info import SpikedetectorInfo
+ from access_node.models.spikes import Spikes
+diff -ruN insite-1.1.0/access-node/access_node/models/load_lore.py NEW/access-node/access_node/models/load_lore.py
+--- insite-1.1.0/access-node/access_node/models/load_lore.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/access_node/models/load_lore.py	2022-08-31 21:50:13.000000000 +0200
+@@ -0,0 +1,95 @@
++# coding: utf-8
++
++from __future__ import absolute_import
++from datetime import date, datetime  # noqa: F401
++
++from typing import List, Dict  # noqa: F401
++
++from access_node.models.base_model_ import Model
++from access_node.models.node_load_lore import NodeLoadLore
++from access_node import util
++
++
++class LoadLore(Model):
++    """NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
++
++    Do not edit the class manually.
++    """
++
++    def __init__(self, secs_from_epoch=None, load_lore_nodes=None):  # noqa: E501
++        """LoadLore - a model defined in OpenAPI
++
++        :param secs_from_epoch: The seconds from epoch of this LoadLore.  # noqa: E501
++        :type secs_from_epoch: float
++        :param load_lore_nodes: The load lore nodes of this LoadLore.  # noqa: E501
++        :type load_lore_nodes: List[NodeLoadLore]
++        """
++        self.openapi_types = {
++            'secs_from_epoch': List[NodeLoadLore],
++            'load_lore_nodes': List[NodeLoadLore]
++        }
++
++        self.attribute_map = {
++            'secs_from_epoch': 'secsFromEpoch',
++            'load_lore_nodes': 'loadLoreNodes'
++        }
++
++        self._secs_from_epoch = secs_from_epoch
++        self._load_lore_nodes = load_lore_nodes
++
++    @classmethod
++    def from_dict(cls, dikt) -> 'LoadLore':
++        """Returns the dict as a model
++
++        :param dikt: A dict.
++        :type: dict
++        :return: The LoadLore of this LoadLore.  # noqa: E501
++        :rtype: LoadLore
++        """
++        return util.deserialize_model(dikt, cls)
++
++    @property
++    def secs_from_epoch(self):
++        """Gets the seconds from epoch of this LoadLore.
++
++
++        :return: The seconds from epoch of this LoadLore.
++        :rtype: float
++        """
++        return self._secs_from_epoch
++
++    @secs_from_epoch.setter
++    def secs_from_epoch(self, secs_from_epoch):
++        """Sets the seconds from epoch of this LoadLore.
++
++
++        :param secs_from_epoch: The seconds from epoch of this LoadLore.
++        :type secs_from_epoch: float
++        """
++        if secs_from_epoch is None:
++            raise ValueError("Invalid value for `secs_from_epoch`, must not be `None`")  # noqa: E501
++
++        self._secs_from_epoch = secs_from_epoch
++
++    @property
++    def load_lore_nodes(self):
++        """Gets the load lore nodes of this LoadLore.
++
++
++        :return: The load lore nodes of this LoadLore.
++        :rtype: List[NodeLoadLore]
++        """
++        return self._load_lore_nodes
++
++    @load_lore_nodes.setter
++    def load_lore_nodes(self, load_lore_nodes):
++        """Sets the load lore nodes of this LoadLore.
++
++
++        :param load_lore_nodes: The load lore nodes of this LoadLore.
++        :type load_lore_nodes: List[NodeLoadLore]
++        """
++        if load_lore_nodes is None:
++            raise ValueError("Invalid value for `load_lore_nodes`, must not be `None`")  # noqa: E501
++
++        self._load_lore_nodes = load_lore_nodes
+diff -ruN insite-1.1.0/access-node/access_node/models/node_load_lore.py NEW/access-node/access_node/models/node_load_lore.py
+--- insite-1.1.0/access-node/access_node/models/node_load_lore.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/access_node/models/node_load_lore.py	2022-08-31 20:57:23.000000000 +0200
+@@ -0,0 +1,142 @@
++# coding: utf-8
++
++from __future__ import absolute_import
++from datetime import date, datetime  # noqa: F401
++
++from typing import Dict  # noqa: F401
++
++from access_node.models.base_model_ import Model
++from access_node import util
++
++
++class NodeLoadLore(Model):
++    """NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
++
++    Do not edit the class manually.
++    """
++
++    def __init__(self, port_nr=None, pid=None, cpu_percent=None, mem_kb=None):  # noqa: E501
++        """NodeLoadLore - a model defined in OpenAPI
++
++        :param port_nr: The port nr of this NodeLoadLore.  # noqa: E501
++        :type port_nr: int
++        :param pid: The PID of this NodeLoadLore.  # noqa: E501
++        :type pid: int
++        :param cpu_percent: The CPU % of this NodeLoadLore.  # noqa: E501
++        :type cpu_percent: float
++        :param mem_kb: The mem kB of this NodeLoadLore.  # noqa: E501
++        :type mem_kb: float
++        """
++        self.openapi_types = {
++            'port_nr': int,
++            'pid': int,
++            'cpu_percent': float,
++            'mem_kb': float
++        }
++
++        self.attribute_map = {
++            'port_nr': 'portNr',
++            'pid': 'pid',
++            'cpu_percent': 'cpuPercent',
++            'mem_kb': 'memKb'
++        }
++
++        self._port_nr = port_nr
++        self._pid = pid
++        self._cpu_percent = cpu_percent
++        self._mem_kb = mem_kb
++
++    @classmethod
++    def from_dict(cls, dikt) -> 'NodeLoadLore':
++        """Returns the dict as a model
++
++        :param dikt: A dict.
++        :type: dict
++        :return: The NodeLoadLore of this NodeLoadLore.  # noqa: E501
++        :rtype: NodeLoadLore
++        """
++        return util.deserialize_model(dikt, cls)
++
++    @property
++    def port_nr(self):
++        """Gets the port nr of this NodeLoadLore.
++
++
++        :return: The port nr of this NodeLoadLore.
++        :rtype: int
++        """
++        return self._port_nr
++
++    @port_nr.setter
++    def port_nr(self, port_nr):
++        """Sets the port nr of this NodeLoadLore.
++
++
++        :param port_nr: The port nr of this NodeLoadLore.
++        :type port_nr: int
++        """
++
++        self._port_nr = port_nr
++
++    @property
++    def pid(self):
++        """Gets the PID of this NodeLoadLore.
++
++
++        :return: The PID of this NodeLoadLore.
++        :rtype: int
++        """
++        return self._pid
++
++    @pid.setter
++    def pid(self, pid):
++        """Sets the PID of this NodeLoadLore.
++
++
++        :param pid: The PID of this NodeLoadLore.
++        :type pid: int
++        """
++
++        self._pid = pid
++
++    @property
++    def cpu_percent(self):
++        """Gets the CPU % of this NodeLoadLore.
++
++
++        :return: The CPU % of this NodeLoadLore.
++        :rtype: float
++        """
++        return self._cpu_percent
++
++    @cpu_percent.setter
++    def cpu_percent(self, cpu_percent):
++        """Sets the CPU % of this NodeLoadLore.
++
++
++        :param cpu_percent: The CPU % of this NodeLoadLore.
++        :type cpu_percent: float
++        """
++
++        self._cpu_percent = cpu_percent
++
++    @property
++    def mem_kb(self):
++        """Gets the mem kB of this NodeLoadLore.
++
++
++        :return: The mem kB of this NodeLoadLore.
++        :rtype: float
++        """
++        return self._mem_kb
++
++    @mem_kb.setter
++    def mem_kb(self, mem_kb):
++        """Sets the mem kB of this NodeLoadLore.
++
++
++        :param mem_kb: The mem kB of this NodeLoadLore.
++        :type mem_kb: float
++        """
++
++        self._mem_kb = mem_kb
+diff -ruN insite-1.1.0/access-node/access_node/models/node_ring_buffer_size_lore.py NEW/access-node/access_node/models/node_ring_buffer_size_lore.py
+--- insite-1.1.0/access-node/access_node/models/node_ring_buffer_size_lore.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/access_node/models/node_ring_buffer_size_lore.py	2023-01-19 17:57:16.672690691 +0100
+@@ -0,0 +1,116 @@
++# coding: utf-8
++
++from __future__ import absolute_import
++from datetime import date, datetime  # noqa: F401
++
++from typing import Dict  # noqa: F401
++
++from access_node.models.base_model_ import Model
++from access_node import util
++
++
++class NodeRingBufferSizeLore(Model):
++    """NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
++
++    Do not edit the class manually.
++    """
++
++    def __init__(self, port_nr=None, ring_buffer_size=None, secs_since_epoch=None):  # noqa: E501
++        """NodeRingBufferSizeLore - a model defined in OpenAPI
++
++        :param port_nr: The port nr of this NodeRingBufferSizeLore.  # noqa: E501
++        :type port_nr: int
++        :param ring_buffer_size: The ring buffer size of this RingBufferSizeLore.  # noqa: E501
++        :type ring_buffer_size: int
++        :param secs_since_epoch: The seconds since epoch of this NodeSpikeCountLore.  # noqa: E501
++        :type secs_since_epoch: float
++        """
++        self.openapi_types = {
++            'port_nr': int,
++            'ring_buffer_size': int,
++            'secs_since_epoch': float
++        }
++
++        self.attribute_map = {
++            'port_nr': 'portNr',
++            'ring_buffer_size': 'mpiBufferSize',
++            'secs_since_epoch': 'secsSinceEpoch'
++        }
++
++        self._port_nr = port_nr
++        self._ring_buffer_size = ring_buffer_size
++        self._secs_since_epoch = secs_since_epoch
++
++    @classmethod
++    def from_dict(cls, dikt) -> 'NodeMPIBufferSizeLore':
++        """Returns the dict as a model
++
++        :param dikt: A dict.
++        :type: dict
++        :return: The NodeRingBufferSizeLore of this NodeRingBufferSizeLore.  # noqa: E501
++        :rtype: NodeRingBufferSizeLore
++        """
++        return util.deserialize_model(dikt, cls)
++
++    @property
++    def port_nr(self):
++        """Gets the port nr of this NodeRingBufferSizeLore.
++
++
++        :return: The port nr of this NodeRingBufferSizeLore.
++        :rtype: int
++        """
++        return self._port_nr
++
++    @port_nr.setter
++    def port_nr(self, port_nr):
++        """Sets the port nr of this NodeRingBufferSizeLore.
++
++
++        :param port_nr: The port nr of this NodeRingBufferSizeLore.
++        :type port_nr: int
++        """
++
++        self._port_nr = port_nr
++
++    @property
++    def ring_buffer_size(self):
++        """Gets the ring buffer size of this NodeRingBufferSizeLore.
++
++
++        :return: The ring buffer size of this NodeRingBufferSizeLore.
++        :rtype: float
++        """
++        return self._ring_buffer_size
++
++    @ring_buffer_size.setter
++    def ring_buffer_size(self, ring_buffer_size):
++        """Sets the ring buffer size of this NodeRingBufferSizeLore.
++
++
++        :param ring_buffer_size: The ring buffer size of this NodeRingBufferSizeLore.
++        :type ring_buffer_size: float
++        """
++
++        self._ring_buffer_size = ring_buffer_size
++
++    @property
++    def secs_since_epoch(self):
++        """Gets the seconds since epoch of this NodeSpikeCountLore.
++
++
++        :return: The seconds since epoch of this NodeSpikeCountLore.
++        :rtype: float
++        """
++        return self._secs_since_epoch
++
++    @secs_since_epoch.setter
++    def secs_since_epoch(self, secs_since_epoch):
++        """Sets the seconds since epoch of this NodeSpikeCountLore.
++
++
++        :param secs_since_epoch: The seconds since epoch of this NodeSpikeCountLore.
++        :type secs_since_epoch: float
++        """
++
++        self._secs_since_epoch = secs_since_epoch
+diff -ruN insite-1.1.0/access-node/access_node/models/node_spike_count_lore.py NEW/access-node/access_node/models/node_spike_count_lore.py
+--- insite-1.1.0/access-node/access_node/models/node_spike_count_lore.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/access_node/models/node_spike_count_lore.py	2023-01-04 23:45:27.452849556 +0100
+@@ -0,0 +1,119 @@
++# coding: utf-8
++
++from __future__ import absolute_import
++from datetime import date, datetime  # noqa: F401
++
++from typing import Dict  # noqa: F401
++
++from access_node.models.base_model_ import Model
++from access_node import util
++
++
++class NodeSpikeCountLore(Model):
++    """NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
++
++    Do not edit the class manually.
++    """
++
++    def __init__(self, port_nr=None, spike_count=None, secs_since_epoch=None):  # noqa: E501
++        """NodeSpikeCountLore - a model defined in OpenAPI
++
++        :param port_nr: The port nr of this NodeSpikeCountLore.  # noqa: E501
++        :type port_nr: int
++        :param spike_count: The spike count of this NodeSpikeCountLore.  # noqa: E501
++        :type spike_count: int
++        :param secs_since_epoch: The seconds since epoch of this NodeSpikeCountLore.  # noqa: E501
++        :type secs_since_epoch: float
++        """
++        self.openapi_types = {
++            'port_nr': int,
++            'spike_count': int,
++            'secs_since_epoch': float
++        }
++
++        self.attribute_map = {
++            'port_nr': 'portNr',
++            'spike_count': 'spikeCount',
++            'secs_since_epoch': 'secsSinceEpoch'
++        }
++
++        self._port_nr = port_nr
++        if spike_count == 18446744073709551601:
++            self._spike_count = -1
++        else:
++            self._spike_count = spike_count
++        self._secs_since_epoch = secs_since_epoch
++
++    @classmethod
++    def from_dict(cls, dikt) -> 'NodeSpikeCountLore':
++        """Returns the dict as a model
++
++        :param dikt: A dict.
++        :type: dict
++        :return: The NodeSpikeCountLore of this NodeSpikeCountLore.  # noqa: E501
++        :rtype: NodeSpikeCountLore
++        """
++        return util.deserialize_model(dikt, cls)
++
++    @property
++    def port_nr(self):
++        """Gets the port nr of this NodeSpikeCountLore.
++
++
++        :return: The port nr of this NodeSpikeCountLore.
++        :rtype: int
++        """
++        return self._port_nr
++
++    @port_nr.setter
++    def port_nr(self, port_nr):
++        """Sets the port nr of this NodeSpikeCountLore.
++
++
++        :param port_nr: The port nr of this NodeSpikeCountLore.
++        :type port_nr: int
++        """
++
++        self._port_nr = port_nr
++
++    @property
++    def spike_count(self):
++        """Gets the spike count of this NodeSpikeCountLore.
++
++
++        :return: The spike count of this NodeSpikeCountLore.
++        :rtype: float
++        """
++        return self._spike_count
++
++    @spike_count.setter
++    def spike_count(self, spike_count):
++        """Sets the spike count of this NodeSpikeCountLore.
++
++
++        :param spike_count: The spike count of this NodeSpikeCountLore.
++        :type spike_count: float
++        """
++
++        self._spike_count = spike_count
++
++    @property
++    def secs_since_epoch(self):
++        """Gets the seconds since epoch of this NodeSpikeCountLore.
++
++
++        :return: The seconds since epoch of this NodeSpikeCountLore.
++        :rtype: float
++        """
++        return self._secs_since_epoch
++
++    @secs_since_epoch.setter
++    def secs_since_epoch(self, secs_since_epoch):
++        """Sets the seconds since epoch of this NodeSpikeCountLore.
++
++
++        :param secs_since_epoch: The seconds since epoch of this NodeSpikeCountLore.
++        :type secs_since_epoch: float
++        """
++
++        self._secs_since_epoch = secs_since_epoch
+diff -ruN insite-1.1.0/access-node/access_node/models/ring_buffer_size_lore.py NEW/access-node/access_node/models/ring_buffer_size_lore.py
+--- insite-1.1.0/access-node/access_node/models/ring_buffer_size_lore.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/access_node/models/ring_buffer_size_lore.py	2023-01-19 17:57:46.385820389 +0100
+@@ -0,0 +1,95 @@
++# coding: utf-8
++
++from __future__ import absolute_import
++from datetime import date, datetime  # noqa: F401
++
++from typing import List, Dict  # noqa: F401
++
++from access_node.models.base_model_ import Model
++from access_node.models.node_ring_buffer_size_lore import NodeRingBufferSizeLore
++from access_node import util
++
++
++class RingBufferSizeLore(Model):
++    """NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
++
++    Do not edit the class manually.
++    """ 
++
++    def __init__(self, call_time=None, ring_buffer_size_nodes=None):  # noqa: E501
++        """RingBufferSizeLore - a model defined in OpenAPI
++
++        :param call_time: The milliseconds from simulation begin of this RingBufferSizeLore.  # noqa: E501
++        :type call_time: float
++        :param ring_buffer_size_nodes: The load lore nodes of this RingBufferSizeLore.  # noqa: E501
++        :type ring_buffer_size_nodes: List[NodeRingBufferSizeLore]
++        """
++        self.openapi_types = {
++            'call_time': List[NodeRingBufferSizeLore],
++            'ring_buffer_size_nodes': List[NodeRingBufferSizeLore]
++        }
++
++        self.attribute_map = {
++            'call_time': 'callTime',
++            'ring_buffer_size_nodes': 'mpiBufferSizeNodes'
++        }
++
++        self._call_time = call_time
++        self._ring_buffer_size_nodes = ring_buffer_size_nodes
++
++    @classmethod
++    def from_dict(cls, dikt) -> 'MPIBufferSizeLore':
++        """Returns the dict as a model
++
++        :param dikt: A dict.
++        :type: dict
++        :return: The RingBufferSizeLore of this RingBufferSizeLore.  # noqa: E501
++        :rtype: RingBufferSizeLore
++        """
++        return util.deserialize_model(dikt, cls)
++
++    @property
++    def call_time(self):
++        """Gets the seconds from epoch of this RingBufferSizeLore.
++
++
++        :return: The seconds from epoch of this RingBufferSizeLore.
++        :rtype: float
++        """
++        return self._call_time
++
++    @call_time.setter
++    def call_time(self, call_time):
++        """Sets the seconds from epoch of this RingBufferSizeLore.
++
++
++        :param call_time: The seconds from epoch of this RingBufferSizeLore.
++        :type call_time: float
++        """
++        if call_time is None:
++            raise ValueError("Invalid value for `call_time`, must not be `None`")  # noqa: E501
++
++        self._call_time = call_time
++
++    @property
++    def ring_buffer_size_nodes(self):
++        """Gets the load lore nodes of this RingBufferSizeLore.
++
++
++        :return: The load lore nodes of this RingBufferSizeLore.
++        :rtype: List[NodeRingBufferSizeLore]
++        """
++        return self._ring_buffer_size_nodes
++
++    @ring_buffer_size_nodes.setter
++    def ring_buffer_size_nodes(self, ring_buffer_size_nodes):
++        """Sets the load lore nodes of this RingBufferSizeLore.
++
++
++        :param ring_buffer_size_nodes: The load lore nodes of this RingBufferSizeLore.
++        :type ring_buffer_size_nodes: List[NodeRingBufferSizeLore]
++        """
++        if ring_buffer_size_nodes is None:
++            raise ValueError("Invalid value for `ring_buffer_size_nodes`, must not be `None`")  # noqa: E501
++
++        self._ring_buffer_size_nodes = ring_buffer_size_nodes
+diff -ruN insite-1.1.0/access-node/access_node/models/spike_count_lore.py NEW/access-node/access_node/models/spike_count_lore.py
+--- insite-1.1.0/access-node/access_node/models/spike_count_lore.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/access_node/models/spike_count_lore.py	2023-01-04 10:04:07.199995144 +0100
+@@ -0,0 +1,95 @@
++# coding: utf-8
++
++from __future__ import absolute_import
++from datetime import date, datetime  # noqa: F401
++
++from typing import List, Dict  # noqa: F401
++
++from access_node.models.base_model_ import Model
++from access_node.models.node_spike_count_lore import NodeSpikeCountLore
++from access_node import util
++
++
++class SpikeCountLore(Model):
++    """NOTE: This class is auto generated by OpenAPI Generator (https://openapi-generator.tech).
++
++    Do not edit the class manually.
++    """ 
++
++    def __init__(self, call_time=None, spike_count_nodes=None):  # noqa: E501
++        """SpikeCountLore - a model defined in OpenAPI
++
++        :param call_time: The milliseconds from simulation begin of this SpikeCountLore.  # noqa: E501
++        :type call_time: float
++        :param spike_count_nodes: The load lore nodes of this SpikeCountLore.  # noqa: E501
++        :type spike_count_nodes: List[NodeSpikeCountLore]
++        """
++        self.openapi_types = {
++            'call_time': List[NodeSpikeCountLore],
++            'spike_count_nodes': List[NodeSpikeCountLore]
++        }
++
++        self.attribute_map = {
++            'call_time': 'callTime',
++            'spike_count_nodes': 'spikeCountNodes'
++        }
++
++        self._call_time = call_time
++        self._spike_count_nodes = spike_count_nodes
++
++    @classmethod
++    def from_dict(cls, dikt) -> 'SpikeCountLore':
++        """Returns the dict as a model
++
++        :param dikt: A dict.
++        :type: dict
++        :return: The SpikeCountLore of this SpikeCountLore.  # noqa: E501
++        :rtype: SpikeCountLore
++        """
++        return util.deserialize_model(dikt, cls)
++
++    @property
++    def call_time(self):
++        """Gets the seconds from epoch of this SpikeCountLore.
++
++
++        :return: The seconds from epoch of this SpikeCountLore.
++        :rtype: float
++        """
++        return self._call_time
++
++    @call_time.setter
++    def call_time(self, call_time):
++        """Sets the seconds from epoch of this SpikeCountLore.
++
++
++        :param call_time: The seconds from epoch of this SpikeCountLore.
++        :type call_time: float
++        """
++        if call_time is None:
++            raise ValueError("Invalid value for `call_time`, must not be `None`")  # noqa: E501
++
++        self._call_time = call_time
++
++    @property
++    def spike_count_nodes(self):
++        """Gets the load lore nodes of this SpikeCountLore.
++
++
++        :return: The load lore nodes of this SpikeCountLore.
++        :rtype: List[NodeSpikeCountLore]
++        """
++        return self._spike_count_nodes
++
++    @spike_count_nodes.setter
++    def spike_count_nodes(self, spike_count_nodes):
++        """Sets the load lore nodes of this SpikeCountLore.
++
++
++        :param spike_count_nodes: The load lore nodes of this SpikeCountLore.
++        :type spike_count_nodes: List[NodeSpikeCountLore]
++        """
++        if spike_count_nodes is None:
++            raise ValueError("Invalid value for `spike_count_nodes`, must not be `None`")  # noqa: E501
++
++        self._spike_count_nodes = spike_count_nodes
+diff -ruN insite-1.1.0/access-node/access_node/openapi/v1.yaml NEW/access-node/access_node/openapi/v1.yaml
+--- insite-1.1.0/access-node/access_node/openapi/v1.yaml	2022-02-17 12:31:31.000000000 +0100
++++ NEW/access-node/access_node/openapi/v1.yaml	2023-01-04 11:35:11.686108372 +0100
+@@ -1034,6 +1034,82 @@
+         - General
+       x-swagger-router-controller: access_node.controllers.version_controller
+       x-openapi-router-controller: access_node.controllers.version_controller
++  /loadLore/:
++    get:
++      operationId: get_load_lore
++      responses:
++        "200":
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/Version'
++          description: Operation successful.
++        "500":
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/ErrorResponse'
++          description: Operation failed due to server error.
++      summary: Get Insite and API version
++      description: Returns the deployed insite and API versions.
++      tags:
++        - General
++      x-swagger-router-controller: access_node.controllers.version_controller
++      x-openapi-router-controller: access_node.controllers.version_controller
++  /nest/ringBufferSize/:
++    get:
++      operationId: nest_get_ring_buffer_size
++      responses:
++        "200":
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/Version'
++          description: Operation successful.
++        "500":
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/ErrorResponse'
++          description: Operation failed due to server error.
++      summary: Get ring buffer size
++      description: Returns the ring buffer size.
++      tags:
++        - General
++      x-swagger-router-controller: access_node.controllers.nest_controller
++      x-openapi-router-controller: access_node.controllers.nest_controller
++  /nest/spikeCountForLast/:
++    get:
++      operationId: nest_get_spike_count_for_last
++      parameters:
++      - description: Duration back from call time to count spikes in.
++        explode: true
++        in: query
++        name: duration
++        required: false
++        schema:
++          format: double
++          type: number
++        style: form
++      responses:
++        "200":
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/Version'
++          description: Operation successful.
++        "500":
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/ErrorResponse'
++          description: Operation failed due to server error.
++      summary: Get ring buffer size
++      description: Returns the ring buffer size.
++      tags:
++        - General
++      x-swagger-router-controller: access_node.controllers.nest_controller
++      x-openapi-router-controller: access_node.controllers.nest_controller
+ components:
+   schemas:
+     Version:
+diff -ruN insite-1.1.0/access-node/nest_module.url NEW/access-node/nest_module.url
+--- insite-1.1.0/access-node/nest_module.url	1970-01-01 01:00:00.000000000 +0100
++++ NEW/access-node/nest_module.url	2023-02-27 13:40:21.386131724 +0100
+@@ -0,0 +1 @@
++http://127.0.0.1:9000
+diff -ruN insite-1.1.0/nest-module/brunel_simulation_insite.py NEW/nest-module/brunel_simulation_insite.py
+--- insite-1.1.0/nest-module/brunel_simulation_insite.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/brunel_simulation_insite.py	2022-09-06 09:05:54.000000000 +0200
+@@ -0,0 +1,365 @@
++#!/usr/bin/env python3
++# -*- coding: utf-8 -*-
++#
++# brunel_delta_nest.py
++#
++# This file is part of NEST.
++#
++# Copyright (C) 2004 The NEST Initiative
++#
++# NEST is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 2 of the License, or
++# (at your option) any later version.
++#
++# NEST is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
++
++"""Random balanced network (delta synapses)
++----------------------------------------------
++
++This script simulates an excitatory and an inhibitory population on
++the basis of the network used in [1]_
++
++When connecting the network customary synapse models are used, which
++allow for querying the number of created synapses. Using spike
++detectors the average firing rates of the neurons in the populations
++are established. The building as well as the simulation time of the
++network are recorded.
++
++References
++~~~~~~~~~~~~~~
++
++.. [1] Brunel N (2000). Dynamics of sparsely connected networks of excitatory and
++       inhibitory spiking neurons. Journal of Computational Neuroscience 8,
++       183-208.
++
++"""
++
++###############################################################################
++# Import all necessary modules for simulation, analysis and plotting.
++
++import nest
++import signal
++import math
++
++import time
++import sys
++from numpy import exp
++
++
++def sigint_handler(sig, frame):
++    print('Exiting...')
++    sys.exit(0)
++
++
++signal.signal(signal.SIGINT, sigint_handler)
++nest.Install("insitemodule")
++
++nest.ResetKernel()
++
++###############################################################################
++# Assigning the current time to a variable in order to determine the build
++# time of the network.
++
++startbuild = time.time()
++
++###############################################################################
++# Assigning the simulation parameters to variables.
++
++dt = 0.1  # the resolution in ms
++simtime = float(sys.argv[1]) if len(
++    sys.argv) > 1 else 300000.0 #### 100.0  # Simulation time in ms
++delay = 1.5  # synaptic delay in ms
++
++
++###############################################################################
++# Definition of the parameters crucial for asynchronous irregular firing of
++# the neurons.
++
++g = 5.0  # ratio inhibitory weight/excitatory weight
++eta = 2.0  # external rate relative to threshold rate
++epsilon = 0.1  # connection probability
++
++###############################################################################
++# Definition of the number of neurons in the network and the number of neuron
++# recorded from
++
++order = int(sys.argv[2]) if len(
++    sys.argv) > 2 else 25 # Should be square, otherwise the position grid becomes invalid
++NE = 4 * order  # number of excitatory neurons
++NI = 1 * order  # number of inhibitory neurons
++N_neurons = NE + NI  # number of neurons in total
++
++###############################################################################
++# Definition of connectivity parameter
++
++CE = int(epsilon * NE)  # number of excitatory synapses per neuron
++CI = int(epsilon * NI)  # number of inhibitory synapses per neuron
++C_tot = int(CI + CE)  # total number of synapses per neuron
++
++###############################################################################
++# Initialization of the parameters of the integrate and fire neuron and the
++# synapses. The parameter of the neuron are stored in a dictionary.
++
++tauMem = 20.0  # time constant of membrane potential in ms
++theta = 20.0  # membrane threshold potential in mV
++neuron_params = {"C_m": 1.0,
++                 "tau_m": tauMem,
++                 "t_ref": 2.0,
++                 "E_L": 0.0,
++                 "V_reset": 0.0,
++                 "V_m": 0.0,
++                 "V_th": theta}
++J = 0.1  # postsynaptic amplitude in mV
++J_ex = J  # amplitude of excitatory postsynaptic potential
++J_in = -g * J_ex  # amplitude of inhibitory postsynaptic potential
++
++###############################################################################
++# Definition of threshold rate, which is the external rate needed to fix the
++# membrane potential around its threshold, the external firing rate and the
++# rate of the poisson generator which is multiplied by the in-degree CE and
++# converted to Hz by multiplication by 1000.
++
++nu_th = theta / (J * CE * tauMem)
++nu_ex = eta * nu_th
++p_rate = 1000.0 * nu_ex * CE
++
++###############################################################################
++# Configuration of the simulation kernel by the previously defined time
++# resolution used in the simulation. Setting ``print_time`` to `True` prints the
++# already processed simulation time as well as its percentage of the total
++# simulation time.
++
++nest.SetKernelStatus({"resolution": dt,
++                      "overwrite_files": True})
++
++print("Building network")
++
++###############################################################################
++# Configuration of the model ``iaf_psc_delta`` and ``poisson_generator`` using
++# ``SetDefaults``. This function expects the model to be the inserted as a
++# string and the parameter to be specified in a dictionary. All instances of
++# theses models created after this point will have the properties specified
++# in the dictionary by default.
++
++nest.SetDefaults("iaf_psc_delta", neuron_params)
++nest.SetDefaults("poisson_generator", {"rate": p_rate})
++
++###############################################################################
++# Creation of the nodes using ``Create``. We store the returned handles in
++# variables for later reference. Here the excitatory and inhibitory, as well
++# as the poisson generator and two spike detectors. The spike detectors will
++# later be used to record excitatory and inhibitory spikes.
++
++nodes_ex = nest.Create("iaf_psc_delta", positions=nest.spatial.grid([int(math.sqrt(NE)), int(math.sqrt(NE))]))
++nodes_in = nest.Create("iaf_psc_delta", positions=nest.spatial.grid([int(math.sqrt(NI)), int(math.sqrt(NI))]))
++noise = nest.Create("poisson_generator")
++
++print("@@@ nodes_ex: ", len(nodes_ex))
++print("@@@ nodes_in: ", len(nodes_in))
++
++side_count_in = int(math.sqrt(order))
++side_count_ex = 2*side_count_in
++
++# print("@@@ ",nest.GetDefaults('iaf_psc_delta')['recordables'])
++# ('V_m',)
++# print("@@@ ",nest.GetDefaults('iaf_psc_delta'))
++# {'archiver_length': 0, 'available': (875,), 'beta_Ca': 0.001, 'C_m': 1.0, 'Ca': 0.0, 'capacity': (1000,), 'E_L': 0.0, 'element_type': 'neuron', 'elementsize': 552, 'frozen': False, 'global_id': 0, 'I_e': 0.0, 'instantiations': (125,), 'local': True, 'model': 'iaf_psc_delta', 'node_uses_wfr': False, 'post_trace': 0.0, 'recordables': ('V_m',), 'refractory_input': False, 'synaptic_elements': {}, 't_ref': 2.0, 't_spike': -1.0, 'tau_Ca': 10000.0, 'tau_m': 20.0, 'tau_minus': 20.0, 'tau_minus_triplet': 110.0, 'thread': 0, 'thread_local_id': -1, 'type_id': 'iaf_psc_delta', 'V_m': 0.0, 'V_min': -1.7976931348623157e+308, 'V_reset': 0.0, 'V_th': 20.0, 'vp': -1}
++
++spike_recorders_ex = [nest.Create('spike_recorder') for n in range(side_count_ex)]
++for n in range(side_count_ex):
++    beg= n*side_count_ex
++    end= beg+side_count_ex
++    nest.Connect(nodes_ex[beg:end], spike_recorders_ex[n])
++    nest.SetStatus(spike_recorders_ex[n], [{"record_to":"insite"}])
++spike_recorders_in = [nest.Create('spike_recorder') for n in range(side_count_in)]
++for n in range(side_count_in):
++    beg= n*side_count_in
++    end= beg+side_count_in
++    nest.Connect(nodes_in[beg:end], spike_recorders_in[n])
++    nest.SetStatus(spike_recorders_in[n], [{"record_to":"insite"}])
++
++multimeter_ex = [nest.Create('multimeter', 1, {'record_from': ['V_m']}) for n in range(side_count_ex)]
++for n in range(side_count_ex):
++    beg= n*side_count_ex
++    end= beg+side_count_ex
++    nest.SetStatus(multimeter_ex[n], [{"record_to":"insite"}])
++    nest.Connect(multimeter_ex[n], nodes_ex[beg:end]) # left right order critical
++multimeter_in = [nest.Create('multimeter', 1, {'record_from': ['V_m']}) for n in range(side_count_in)]
++for n in range(side_count_in):
++    beg= n*side_count_in
++    end= beg+side_count_in
++    nest.SetStatus(multimeter_in[n], [{"record_to":"insite"}])
++    nest.Connect(multimeter_in[n], nodes_in[beg:end]) # left right order critical
++
++correlation_detectors_ex = [nest.Create('correlation_detector') for n in range(side_count_ex)]
++for n in range(side_count_ex):
++    beg= n*side_count_ex
++    end= beg+side_count_ex
++    nest.Connect(nodes_ex[beg:end], correlation_detectors_ex[n])
++correlation_detectors_in = [nest.Create('correlation_detector') for n in range(side_count_in)]
++for n in range(side_count_in):
++    beg= n*side_count_in
++    end= beg+side_count_in
++    nest.Connect(nodes_in[beg:end], correlation_detectors_in[n])
++
++correlomatrix_detectors_ex = [nest.Create('correlomatrix_detector') for n in range(side_count_ex)]
++for n in range(side_count_ex):
++    beg= n*side_count_ex
++    end= beg+side_count_ex
++    nest.Connect(nodes_ex[beg:end], correlomatrix_detectors_ex[n])
++correlomatrix_detectors_in = [nest.Create('correlomatrix_detector') for n in range(side_count_in)]
++for n in range(side_count_in):
++    beg= n*side_count_in
++    end= beg+side_count_in
++    nest.Connect(nodes_in[beg:end], correlomatrix_detectors_in[n])
++
++###espikes = nest.Create("spike_detector")
++###ispikes = nest.Create("spike_detector")
++
++###nest.SetStatus(espikes, [{"label": "brunel-py-ex",
++###                          "record_to": "insite"}])
++
++###nest.SetStatus(ispikes, [{"label": "brunel-py-in",
++###                          "record_to": "insite"}])
++
++print("Connecting devices")
++
++###############################################################################
++# Definition of a synapse using ``CopyModel``, which expects the model name of
++# a pre-defined synapse, the name of the customary synapse and an optional
++# parameter dictionary. The parameters defined in the dictionary will be the
++# default parameter for the customary synapse. Here we define one synapse for
++# the excitatory and one for the inhibitory connections giving the
++# previously defined weights and equal delays.
++
++nest.CopyModel("static_synapse", "excitatory",
++               {"weight": J_ex, "delay": delay})
++nest.CopyModel("static_synapse", "inhibitory",
++               {"weight": J_in, "delay": delay})
++
++###############################################################################
++# Connecting the previously defined poisson generator to the excitatory and
++# inhibitory neurons using the excitatory synapse. Since the poisson
++# generator is connected to all neurons in the population the default rule
++# (# ``all_to_all``) of ``Connect`` is used. The synaptic properties are inserted
++# via ``syn_spec`` which expects a dictionary when defining multiple variables
++# or a string when simply using a pre-defined synapse.
++
++nest.Connect(noise, nodes_ex, syn_spec="excitatory")
++nest.Connect(noise, nodes_in, syn_spec="excitatory")
++
++###############################################################################
++# Connecting the first ``N_rec`` nodes of the excitatory and inhibitory
++# population to the associated spike detectors using excitatory synapses.
++# Here the same shortcut for the specification of the synapse as defined
++# above is used.
++
++###nest.Connect(nodes_ex, espikes, syn_spec="excitatory")
++###nest.Connect(nodes_in, ispikes, syn_spec="excitatory")
++
++print("Connecting network")
++
++print("Excitatory connections")
++
++###############################################################################
++# Connecting the excitatory population to all neurons using the pre-defined
++# excitatory synapse. Beforehand, the connection parameter are defined in a
++# dictionary. Here we use the connection rule ``fixed_indegree``,
++# which requires the definition of the indegree. Since the synapse
++# specification is reduced to assigning the pre-defined excitatory synapse it
++# suffices to insert a string.
++
++conn_params_ex = {'rule': 'fixed_indegree', 'indegree': CE}
++nest.Connect(nodes_ex, nodes_ex, conn_params_ex, "excitatory")
++nest.Connect(nodes_ex, nodes_in, conn_params_ex, "excitatory")
++
++print("Inhibitory connections")
++
++###############################################################################
++# Connecting the inhibitory population to all neurons using the pre-defined
++# inhibitory synapse. The connection parameter as well as the synapse
++# paramtere are defined analogously to the connection from the excitatory
++# population defined above.
++
++conn_params_in = {'rule': 'fixed_indegree', 'indegree': CI}
++nest.Connect(nodes_in, nodes_ex, conn_params_in, "inhibitory")
++nest.Connect(nodes_in, nodes_in, conn_params_in, "inhibitory")
++
++###############################################################################
++# Storage of the time point after the buildup of the network in a variable.
++
++endbuild = time.time()
++
++###############################################################################
++# Simulation of the network.
++
++print("Simulating")
++
++nest.Simulate(simtime)
++
++while True:
++    time.sleep(60)
++    print('... brunel_simulation_insite ...')
++
++###############################################################################
++# Storage of the time point after the simulation of the network in a variable.
++
++endsimulate = time.time()
++
++###############################################################################
++# Reading out the total number of spikes received from the spike detector
++# connected to the excitatory population and the inhibitory population.
++
++###events_ex = nest.GetStatus(espikes, "n_events")[0]
++###events_in = nest.GetStatus(ispikes, "n_events")[0]
++
++###############################################################################
++# Calculation of the average firing rate of the excitatory and the inhibitory
++# neurons by dividing the total number of recorded spikes by the number of
++# neurons recorded from and the simulation time. The multiplication by 1000.0
++# converts the unit 1/ms to 1/s=Hz.
++
++###rate_ex = events_ex / simtime * 1000.0 / NE
++###rate_in = events_in / simtime * 1000.0 / NI
++
++###############################################################################
++# Reading out the number of connections established using the excitatory and
++# inhibitory synapse model. The numbers are summed up resulting in the total
++# number of synapses.
++
++num_synapses = (nest.GetDefaults("excitatory")["num_connections"] +
++                nest.GetDefaults("inhibitory")["num_connections"])
++
++###############################################################################
++# Establishing the time it took to build and simulate the network by taking
++# the difference of the pre-defined time variables.
++
++build_time = endbuild - startbuild
++sim_time = endsimulate - endbuild
++
++###############################################################################
++# Printing the network properties, firing rates and building times.
++
++print("Brunel network simulation (Python)")
++print("Number of neurons : {0}".format(N_neurons))
++print("Number of synapses: {0}".format(num_synapses))
++print("       Exitatory  : {0}".format(int(CE * N_neurons) + N_neurons))
++print("       Inhibitory : {0}".format(int(CI * N_neurons)))
++###print("Excitatory rate   : %.2f Hz" % rate_ex)
++###print("Inhibitory rate   : %.2f Hz" % rate_in)
++print("Building time     : %.2f s" % build_time)
++print("Simulation time   : %.2f s" % sim_time)
++
++try:
++    input("Press Enter to quit...")
++except EOFError:
++    print("Simulation finished, press ctrl+c to exit.")
++    while True:
++        time.sleep(1)
+diff -ruN insite-1.1.0/nest-module/brunel_simulation.py NEW/nest-module/brunel_simulation.py
+--- insite-1.1.0/nest-module/brunel_simulation.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/brunel_simulation.py	2022-08-26 17:42:46.000000000 +0200
+@@ -0,0 +1,302 @@
++#!/usr/bin/env python3
++# -*- coding: utf-8 -*-
++#
++# brunel_delta_nest.py
++#
++# This file is part of NEST.
++#
++# Copyright (C) 2004 The NEST Initiative
++#
++# NEST is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 2 of the License, or
++# (at your option) any later version.
++#
++# NEST is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
++
++"""Random balanced network (delta synapses)
++----------------------------------------------
++
++This script simulates an excitatory and an inhibitory population on
++the basis of the network used in [1]_
++
++When connecting the network customary synapse models are used, which
++allow for querying the number of created synapses. Using spike
++detectors the average firing rates of the neurons in the populations
++are established. The building as well as the simulation time of the
++network are recorded.
++
++References
++~~~~~~~~~~~~~~
++
++.. [1] Brunel N (2000). Dynamics of sparsely connected networks of excitatory and
++       inhibitory spiking neurons. Journal of Computational Neuroscience 8,
++       183-208.
++
++"""
++
++###############################################################################
++# Import all necessary modules for simulation, analysis and plotting.
++
++import nest
++import signal
++import math
++
++import time
++import sys
++from numpy import exp
++
++
++def sigint_handler(sig, frame):
++    print('Exiting...')
++    sys.exit(0)
++
++
++signal.signal(signal.SIGINT, sigint_handler)
++
++nest.Install("insitemodule")
++
++nest.ResetKernel()
++
++###############################################################################
++# Assigning the current time to a variable in order to determine the build
++# time of the network.
++
++startbuild = time.time()
++
++###############################################################################
++# Assigning the simulation parameters to variables.
++
++dt = 0.1  # the resolution in ms
++simtime = float(sys.argv[1]) if len(
++    sys.argv) > 1 else 100.0  # Simulation time in ms
++delay = 1.5  # synaptic delay in ms
++
++
++###############################################################################
++# Definition of the parameters crucial for asynchronous irregular firing of
++# the neurons.
++
++g = 5.0  # ratio inhibitory weight/excitatory weight
++eta = 2.0  # external rate relative to threshold rate
++epsilon = 0.1  # connection probability
++
++###############################################################################
++# Definition of the number of neurons in the network and the number of neuron
++# recorded from
++
++order = int(sys.argv[2]) if len(
++    sys.argv) > 2 else 25 # Should be square, otherwise the position grid becomes invalid
++NE = 4 * order  # number of excitatory neurons
++NI = 1 * order  # number of inhibitory neurons
++N_neurons = NE + NI  # number of neurons in total
++
++###############################################################################
++# Definition of connectivity parameter
++
++CE = int(epsilon * NE)  # number of excitatory synapses per neuron
++CI = int(epsilon * NI)  # number of inhibitory synapses per neuron
++C_tot = int(CI + CE)  # total number of synapses per neuron
++
++###############################################################################
++# Initialization of the parameters of the integrate and fire neuron and the
++# synapses. The parameter of the neuron are stored in a dictionary.
++
++tauMem = 20.0  # time constant of membrane potential in ms
++theta = 20.0  # membrane threshold potential in mV
++neuron_params = {"C_m": 1.0,
++                 "tau_m": tauMem,
++                 "t_ref": 2.0,
++                 "E_L": 0.0,
++                 "V_reset": 0.0,
++                 "V_m": 0.0,
++                 "V_th": theta}
++J = 0.1  # postsynaptic amplitude in mV
++J_ex = J  # amplitude of excitatory postsynaptic potential
++J_in = -g * J_ex  # amplitude of inhibitory postsynaptic potential
++
++###############################################################################
++# Definition of threshold rate, which is the external rate needed to fix the
++# membrane potential around its threshold, the external firing rate and the
++# rate of the poisson generator which is multiplied by the in-degree CE and
++# converted to Hz by multiplication by 1000.
++
++nu_th = theta / (J * CE * tauMem)
++nu_ex = eta * nu_th
++p_rate = 1000.0 * nu_ex * CE
++
++###############################################################################
++# Configuration of the simulation kernel by the previously defined time
++# resolution used in the simulation. Setting ``print_time`` to `True` prints the
++# already processed simulation time as well as its percentage of the total
++# simulation time.
++
++nest.SetKernelStatus({"resolution": dt,
++                      "overwrite_files": True})
++
++print("Building network")
++
++###############################################################################
++# Configuration of the model ``iaf_psc_delta`` and ``poisson_generator`` using
++# ``SetDefaults``. This function expects the model to be the inserted as a
++# string and the parameter to be specified in a dictionary. All instances of
++# theses models created after this point will have the properties specified
++# in the dictionary by default.
++
++nest.SetDefaults("iaf_psc_delta", neuron_params)
++nest.SetDefaults("poisson_generator", {"rate": p_rate})
++
++###############################################################################
++# Creation of the nodes using ``Create``. We store the returned handles in
++# variables for later reference. Here the excitatory and inhibitory, as well
++# as the poisson generator and two spike detectors. The spike detectors will
++# later be used to record excitatory and inhibitory spikes.
++
++nodes_ex = nest.Create("iaf_psc_delta", positions=nest.spatial.grid([int(math.sqrt(NE)), int(math.sqrt(NE))]))
++nodes_in = nest.Create("iaf_psc_delta", positions=nest.spatial.grid([int(math.sqrt(NI)), int(math.sqrt(NI))]))
++noise = nest.Create("poisson_generator")
++espikes = nest.Create("spike_detector")
++ispikes = nest.Create("spike_detector")
++
++nest.SetStatus(espikes, [{"label": "brunel-py-ex",
++                          "record_to": "insite"}])
++
++nest.SetStatus(ispikes, [{"label": "brunel-py-in",
++                          "record_to": "insite"}])
++
++print("Connecting devices")
++
++###############################################################################
++# Definition of a synapse using ``CopyModel``, which expects the model name of
++# a pre-defined synapse, the name of the customary synapse and an optional
++# parameter dictionary. The parameters defined in the dictionary will be the
++# default parameter for the customary synapse. Here we define one synapse for
++# the excitatory and one for the inhibitory connections giving the
++# previously defined weights and equal delays.
++
++nest.CopyModel("static_synapse", "excitatory",
++               {"weight": J_ex, "delay": delay})
++nest.CopyModel("static_synapse", "inhibitory",
++               {"weight": J_in, "delay": delay})
++
++###############################################################################
++# Connecting the previously defined poisson generator to the excitatory and
++# inhibitory neurons using the excitatory synapse. Since the poisson
++# generator is connected to all neurons in the population the default rule
++# (# ``all_to_all``) of ``Connect`` is used. The synaptic properties are inserted
++# via ``syn_spec`` which expects a dictionary when defining multiple variables
++# or a string when simply using a pre-defined synapse.
++
++nest.Connect(noise, nodes_ex, syn_spec="excitatory")
++nest.Connect(noise, nodes_in, syn_spec="excitatory")
++
++###############################################################################
++# Connecting the first ``N_rec`` nodes of the excitatory and inhibitory
++# population to the associated spike detectors using excitatory synapses.
++# Here the same shortcut for the specification of the synapse as defined
++# above is used.
++
++nest.Connect(nodes_ex, espikes, syn_spec="excitatory")
++nest.Connect(nodes_in, ispikes, syn_spec="excitatory")
++
++print("Connecting network")
++
++print("Excitatory connections")
++
++###############################################################################
++# Connecting the excitatory population to all neurons using the pre-defined
++# excitatory synapse. Beforehand, the connection parameter are defined in a
++# dictionary. Here we use the connection rule ``fixed_indegree``,
++# which requires the definition of the indegree. Since the synapse
++# specification is reduced to assigning the pre-defined excitatory synapse it
++# suffices to insert a string.
++
++conn_params_ex = {'rule': 'fixed_indegree', 'indegree': CE}
++nest.Connect(nodes_ex, nodes_ex, conn_params_ex, "excitatory")
++nest.Connect(nodes_ex, nodes_in, conn_params_ex, "excitatory")
++
++print("Inhibitory connections")
++
++###############################################################################
++# Connecting the inhibitory population to all neurons using the pre-defined
++# inhibitory synapse. The connection parameter as well as the synapse
++# paramtere are defined analogously to the connection from the excitatory
++# population defined above.
++
++conn_params_in = {'rule': 'fixed_indegree', 'indegree': CI}
++nest.Connect(nodes_in, nodes_ex, conn_params_in, "inhibitory")
++nest.Connect(nodes_in, nodes_in, conn_params_in, "inhibitory")
++
++###############################################################################
++# Storage of the time point after the buildup of the network in a variable.
++
++endbuild = time.time()
++
++###############################################################################
++# Simulation of the network.
++
++print("Simulating")
++
++nest.Simulate(simtime)
++
++###############################################################################
++# Storage of the time point after the simulation of the network in a variable.
++
++endsimulate = time.time()
++
++###############################################################################
++# Reading out the total number of spikes received from the spike detector
++# connected to the excitatory population and the inhibitory population.
++
++events_ex = nest.GetStatus(espikes, "n_events")[0]
++events_in = nest.GetStatus(ispikes, "n_events")[0]
++
++###############################################################################
++# Calculation of the average firing rate of the excitatory and the inhibitory
++# neurons by dividing the total number of recorded spikes by the number of
++# neurons recorded from and the simulation time. The multiplication by 1000.0
++# converts the unit 1/ms to 1/s=Hz.
++
++rate_ex = events_ex / simtime * 1000.0 / NE
++rate_in = events_in / simtime * 1000.0 / NI
++
++###############################################################################
++# Reading out the number of connections established using the excitatory and
++# inhibitory synapse model. The numbers are summed up resulting in the total
++# number of synapses.
++
++num_synapses = (nest.GetDefaults("excitatory")["num_connections"] +
++                nest.GetDefaults("inhibitory")["num_connections"])
++
++###############################################################################
++# Establishing the time it took to build and simulate the network by taking
++# the difference of the pre-defined time variables.
++
++build_time = endbuild - startbuild
++sim_time = endsimulate - endbuild
++
++###############################################################################
++# Printing the network properties, firing rates and building times.
++
++print("Brunel network simulation (Python)")
++print("Number of neurons : {0}".format(N_neurons))
++print("Number of synapses: {0}".format(num_synapses))
++print("       Exitatory  : {0}".format(int(CE * N_neurons) + N_neurons))
++print("       Inhibitory : {0}".format(int(CI * N_neurons)))
++print("Excitatory rate   : %.2f Hz" % rate_ex)
++print("Inhibitory rate   : %.2f Hz" % rate_in)
++print("Building time     : %.2f s" % build_time)
++print("Simulation time   : %.2f s" % sim_time)
++
++try:
++    input("Press Enter to quit...")
++except EOFError:
++    print("Simulation finished, press ctrl+c to exit.")
++    while True:
++        time.sleep(1)
+diff -ruN insite-1.1.0/nest-module/InsiteModuleMultimeter.py NEW/nest-module/InsiteModuleMultimeter.py
+--- insite-1.1.0/nest-module/InsiteModuleMultimeter.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/InsiteModuleMultimeter.py	2022-08-25 15:34:57.000000000 +0200
+@@ -0,0 +1,28 @@
++#!/usr/bin/env python3
++import nest
++import time
++import nest.voltage_trace
++import matplotlib.pyplot as plt
++nest.ResetKernel()
++print(nest.recording_backends)
++nest.Install('insitemodule')
++print(nest.recording_backends)
++neuron = nest.Create('iaf_psc_exp')
++spikegenerator = nest.Create('spike_generator')
++voltmeter = nest.Create('voltmeter')
++spikegenerator.set(spike_times=[10.0, 50.0])
++nest.Connect(spikegenerator, neuron, syn_spec={'weight': 1e3})
++nest.Connect(voltmeter, neuron)
++spike_recorder = nest.Create('spike_recorder')
++nest.Connect(neuron, spike_recorder)
++nest.SetStatus(spike_recorder, [{"record_to":"insite"}])
++#print("@@@ ",nest.GetDefaults('iaf_cond_alpha')['recordables'])
++#('g_ex', 'g_in', 't_ref_remaining', 'V_m')
++multimeter = nest.Create('multimeter', 1, {'record_from': ['V_m']})
++nest.SetStatus(multimeter, [{"record_to":"insite"}])
++nest.Connect(multimeter, neuron)
++
++nest.Simulate(100.0)
++while True:
++    time.sleep(60)
++    print('...')
+diff -ruN insite-1.1.0/nest-module/InsiteModuleRun.py NEW/nest-module/InsiteModuleRun.py
+--- insite-1.1.0/nest-module/InsiteModuleRun.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/InsiteModuleRun.py	2022-08-23 12:36:14.000000000 +0200
+@@ -0,0 +1,17 @@
++#!/usr/bin/env python3
++import nest
++import time
++import nest.voltage_trace
++import matplotlib.pyplot as plt
++nest.ResetKernel()
++nest.Install('insitemodule')
++neuron = nest.Create('iaf_psc_exp')
++spikegenerator = nest.Create('spike_generator')
++voltmeter = nest.Create('voltmeter')
++spikegenerator.set(spike_times=[10.0, 50.0])
++nest.Connect(spikegenerator, neuron, syn_spec={'weight': 1e3})
++nest.Connect(voltmeter, neuron)
++nest.Simulate(100.0)
++while True:
++    time.sleep(60)
++    print('...')
+diff -ruN insite-1.1.0/nest-module/InsiteModuleSpikeDetector.py NEW/nest-module/InsiteModuleSpikeDetector.py
+--- insite-1.1.0/nest-module/InsiteModuleSpikeDetector.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/InsiteModuleSpikeDetector.py	2022-08-25 14:46:44.000000000 +0200
+@@ -0,0 +1,38 @@
++#!/usr/bin/env python3
++import nest
++import time
++import nest.voltage_trace
++import matplotlib.pyplot as plt
++nest.ResetKernel()
++print(nest.recording_backends)
++nest.Install('insitemodule')
++print(nest.recording_backends)
++neuron = nest.Create('iaf_psc_exp')
++spikegenerator = nest.Create('spike_generator')
++voltmeter = nest.Create('voltmeter')
++spikegenerator.set(spike_times=[10.0, 50.0])
++nest.Connect(spikegenerator, neuron, syn_spec={'weight': 1e3})
++nest.Connect(voltmeter, neuron)
++spike_recorder = nest.Create('spike_recorder')
++nest.Connect(neuron, spike_recorder)
++nest.SetStatus(spike_recorder, [{"record_to":"insite"}])
++#print("@@@ ",nest.GetDefaults('iaf_cond_alpha')['recordables'])
++#('g_ex', 'g_in', 't_ref_remaining', 'V_m')
++
++#spike_detector = nest.Create('correlation_detector')
++spike_detector = nest.Create('correlomatrix_detector')
++
++# nest.lib.hl_api_exceptions.IllegalConnection: IllegalConnection in SLI function Connect_g_g_D_D: Creation of connection is not possible because:
++# Source and target neuron are not compatible (e.g., spiking vs binary neuron).
++#spike_detector = nest.Create('correlospinmatrix_detector')
++
++# nest.lib.hl_api_exceptions.IllegalConnection: IllegalConnection in SLI function Connect_g_g_D_D: Creation of connection is not possible because:
++# Source and target neuron are not compatible (e.g., spiking vs binary neuron).
++#spike_detector = nest.Create('spin_detector')
++
++nest.Connect(neuron, spike_detector)
++
++nest.Simulate(100.0)
++while True:
++    time.sleep(60)
++    print('...')
+diff -ruN insite-1.1.0/nest-module/InsiteModuleSpike.py NEW/nest-module/InsiteModuleSpike.py
+--- insite-1.1.0/nest-module/InsiteModuleSpike.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/InsiteModuleSpike.py	2022-08-26 01:13:58.000000000 +0200
+@@ -0,0 +1,69 @@
++#!/usr/bin/env python3
++import nest
++import time
++import nest.voltage_trace
++import matplotlib.pyplot as plt
++
++J_ex  = 0.1 # excitatory weight
++J_in  = -0.5 # inhibitory weight
++p_rate = 20000. # external Poisson rate
++
++neuron_params= {"C_m": 1.0, "tau_m": 20.0, "t_ref": 2.0,
++                "E_L": 0.0, "V_reset": 0.0, "V_m": 0.0, "V_th": 20.0}
++
++nest.ResetKernel()
++nest.Install('insitemodule')
++
++#neuron = nest.Create('iaf_psc_exp')
++neuron = nest.Create('iaf_psc_delta')
++spikegenerator = nest.Create('spike_generator')
++voltmeter = nest.Create('voltmeter')
++spikegenerator.set(spike_times=[10.0, 50.0])
++nest.Connect(spikegenerator, neuron, syn_spec={'weight': 1e3})
++nest.Connect(voltmeter, neuron)
++spike_recorder = nest.Create('spike_recorder')
++nest.Connect(neuron, spike_recorder)
++nest.SetStatus(spike_recorder, [{"record_to":"insite"}])
++#print("@@@ ",nest.GetDefaults('iaf_cond_alpha')['recordables'])
++#('g_ex', 'g_in', 't_ref_remaining', 'V_m')
++
++spike_detector = nest.Create('correlation_detector')
++#spike_detector = nest.Create('correlomatrix_detector')
++
++# nest.lib.hl_api_exceptions.IllegalConnection: IllegalConnection in SLI function Connect_g_g_D_D: Creation of connection is not possible because:
++# Source and target neuron are not compatible (e.g., spiking vs binary neuron).
++#spike_detector = nest.Create('correlospinmatrix_detector')
++
++# nest.lib.hl_api_exceptions.IllegalConnection: IllegalConnection in SLI function Connect_g_g_D_D: Creation of connection is not possible because:
++# Source and target neuron are not compatible (e.g., spiking vs binary neuron).
++#spike_detector = nest.Create('spin_detector')
++
++nest.Connect(neuron, spike_detector)
++
++nest.Simulate(100.0)
++while True:
++    time.sleep(60)
++    print('...')
++
++
++# Set parameters of neurons and devices
++#nest.SetDefaults("iaf_psc_delta", neuron_params)
++#nest.SetDefaults("poisson_generator", {"rate": p_rate})
++#nest.SetDefaults("spike_detector", {"withtime": True, "withgid": True})
++
++# Create neurons and devices
++#nodes_ex=nest.Create("iaf_psc_delta", 10000) 
++#nodes_in=nest.Create("iaf_psc_delta", 2500)
++#noise=nest.Create("poisson_generator")
++#espikes=nest.Create("spike_detector")
++
++# Configure synapse models
++#nest.CopyModel("static_synapse", "excitatory", {"weight":J_ex, "delay":1.5})
++#nest.CopyModel("static_synapse", "inhibitory", {"weight":J_in, "delay":1.5})
++
++# Connect the random net and instrument it with the devices
++#nest.Connect(nodes_ex, nodes_ex+nodes_in, {"rule": 'fixed_indegree', "indegree": 1000}, "excitatory")
++#nest.Connect(nodes_in, nodes_ex+nodes_in, {"rule": 'fixed_indegree', "indegree": 250}, "inhibitory")
++#nest.Connect(noise, nodes_ex+nodes_in, syn_spec="excitatory")
++#nest.Connect(nodes_ex[1:51], espikes)
++
+diff -ruN insite-1.1.0/nest-module/InsiteModuleSpikeRecorder.py NEW/nest-module/InsiteModuleSpikeRecorder.py
+--- insite-1.1.0/nest-module/InsiteModuleSpikeRecorder.py	1970-01-01 01:00:00.000000000 +0100
++++ NEW/nest-module/InsiteModuleSpikeRecorder.py	2022-08-23 14:03:44.000000000 +0200
+@@ -0,0 +1,20 @@
++#!/usr/bin/env python3
++import nest
++import time
++import nest.voltage_trace
++import matplotlib.pyplot as plt
++nest.ResetKernel()
++nest.Install('insitemodule')
++neuron = nest.Create('iaf_psc_exp')
++spikegenerator = nest.Create('spike_generator')
++voltmeter = nest.Create('voltmeter')
++spikegenerator.set(spike_times=[10.0, 50.0])
++nest.Connect(spikegenerator, neuron, syn_spec={'weight': 1e3})
++nest.Connect(voltmeter, neuron)
++spike_recorder = nest.Create('spike_recorder')
++nest.Connect(neuron, spike_recorder)
++nest.SetStatus(spike_recorder, [{"record_to":"insite"}])
++nest.Simulate(100.0)
++while True:
++    time.sleep(60)
++    print('...')
+diff -ruN insite-1.1.0/nest-module/src/CMakeLists.txt NEW/nest-module/src/CMakeLists.txt
+--- insite-1.1.0/nest-module/src/CMakeLists.txt	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/CMakeLists.txt	2022-11-11 13:33:16.110840056 +0100
+@@ -1,3 +1,12 @@
++set(CMAKE_SKIP_BUILD_RPATH  FALSE)
++set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
++set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
++list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES 
++"${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
++if("${isSystemDir}" STREQUAL "-1")
++   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
++endif()
++
+ # examples/MyModule/CMakeLists.txt
+ #
+ # This file is part of NEST.
+diff -ruN insite-1.1.0/nest-module/src/http_server.cpp NEW/nest-module/src/http_server.cpp
+--- insite-1.1.0/nest-module/src/http_server.cpp	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/http_server.cpp	2023-02-20 13:12:45.922686653 +0100
+@@ -1,12 +1,15 @@
+ #include "http_server.hpp"
+ 
+ #include <algorithm>
++#include <chrono>
+ #include <iostream>
+ #include <regex>
+ #include <sstream>
+ #include <unordered_set>
+ 
+ #include "kernel_manager.h"
++//#include "vp_manager.h"
++//#include "vp_manager_impl.h"
+ #include "nest_time.h"
+ #include "serialize.hpp"
+ #include "storage/data_storage.hpp"
+@@ -22,6 +25,12 @@
+       {
+   http_listener_.support([this](web::http::http_request request) {
+     std::cout << "Incoming request: " << request.request_uri().to_string() << std::endl;
++//    std::cout << "mpi_manager.get_num_processes(): "
++//    		  << nest::kernel().mpi_manager.get_num_processes()
++//			  << std::endl;
++//    std::cout << "vp_manager.get_num_virtual_processes(): "
++//    		  << nest::kernel().vp_manager.get_num_virtual_processes()
++//			  << std::endl;
+ 
+     if (request.method() == "GET" &&
+         request.relative_uri().path() == "/version") {
+@@ -53,6 +62,14 @@
+     } else if (request.method() == "GET" &&
+                request.relative_uri().path() == "/simulationTimeInfo") {
+       request.reply(GetCurrentSimulationTime(request));
++    } else if (request.method() == "GET" &&
++               request.relative_uri().path() == "/ringBufferSize") {
++//      request.reply(InsiteMultimeterTimeStepRingBufferSize(request));
++//      request.reply(InsiteSpikeDetectorRingBufferSize(request));
++      request.reply(NestIafPscDeltaRingBufferSize(request));
++    } else if (request.method() == "GET" &&
++               request.relative_uri().path() == "/spikeCountForLast") {
++      request.reply(SpikeCountForLast(request));
+     } else {
+       request.reply(CreateErrorResponse(
+           web::http::status_codes::NotFound,
+@@ -382,6 +399,170 @@
+   return response;
+ }
+ 
++web::http::http_response HttpServer::SpikeCountForLast(
++    const web::http::http_request& request) {
++  using namespace std::chrono;
++  system_clock::time_point tp = system_clock::now();
++  system_clock::duration dtn = tp.time_since_epoch();
++  double secs_since_epoch = double(dtn.count())/1000000000.0;
++  const double callTime = storage_->GetCurrentSimulationTime();
++  size_t overallSpikeCount = 0;
++  const auto parameters = web::uri::split_query(request.request_uri().query());
++  const auto duration_parameter = parameters.find("duration");
++  const double duration = duration_parameter == parameters.end()
++                               ? 0.0
++                               : std::stod(duration_parameter->second);
++
++  const auto spike_detector_id_parameter = parameters.find("spikedetectorId");
++
++  if (spike_detector_id_parameter == parameters.end()) {
++    std::unordered_map<std::uint64_t, std::shared_ptr<SpikedetectorStorage>> spike_detectors = storage_->GetSpikeDetectors();
++    for (const auto& spike_detector_id_storage : spike_detectors) {
++	  size_t thisSpikeCount = spike_detector_id_storage.second->SpikeCountForLast(duration);
++	  if (overallSpikeCount < 0 || thisSpikeCount < 0) {
++		overallSpikeCount = -1;
++	  } else {
++		overallSpikeCount += thisSpikeCount;
++	  }
++    }
++
++  } else {
++    const auto spike_detector_id =
++        std::stoll(spike_detector_id_parameter->second);
++    const auto spike_detector =
++        storage_->GetSpikeDetectorStorage(spike_detector_id);
++
++	std::cout << "SpikeCountForLast: C" << std::endl;
++    if (spike_detector == nullptr) {
++      return CreateErrorResponse(web::http::status_codes::BadRequest,
++                                 {"InvalidSpikeDetectorId"});
++    } else {
++      spike_detector->SpikeCountForLast(duration);
++    }
++  }
++  
++  web::http::http_response response(web::http::status_codes::OK);
++  web::json::value response_body = web::json::value::object();
++  response_body["spikeCount"] = overallSpikeCount;
++  response_body["callTime"] = callTime;
++  response_body["secsSinceEpoch"] = secs_since_epoch;
++  response.set_body(response_body);
++  return response;									   
++}
++
++/** TODO
++ * ensuring chronological order of spikes
++ * ensuring port # separation
++ * marking yields called after simulation end
++ * CurrentSimulationTime or last spike time??
++ */
++web::http::http_response HttpServer::InsiteMultimeterTimeStepRingBufferSize(
++    const web::http::http_request& request) {
++  using namespace std::chrono;
++  system_clock::time_point tp = system_clock::now();
++  system_clock::duration dtn = tp.time_since_epoch();
++  double secs_since_epoch = double(dtn.count())/1000000000.0;
++  const double callTime = storage_->GetCurrentSimulationTime();
++  
++  std::uint64_t overallRingBufferSize = 0;
++  const auto parameters = web::uri::split_query(request.request_uri().query());
++  const auto multimeter_id_parameter = parameters.find("multimeterId");
++  if (multimeter_id_parameter == parameters.end()) {
++    auto multimeters = storage_->GetMultimeters();
++    for (const auto& multimeter_id_storage : multimeters) {
++      overallRingBufferSize += multimeter_id_storage.second->TimeStepRingBufferSize();
++    }
++  } else {
++    const auto multimeter_id =
++        std::stoll(multimeter_id_parameter->second);
++    const auto multimeter =
++        storage_->GetMultimeterStorage(multimeter_id);
++
++    if (multimeter == nullptr) {
++      return CreateErrorResponse(web::http::status_codes::BadRequest,
++                                 {"InvalidMultimeterId"});
++    } else {
++      overallRingBufferSize += multimeter->TimeStepRingBufferSize();
++    }
++  }
++
++  web::http::http_response response(web::http::status_codes::OK);
++  web::json::value response_body = web::json::value::object();
++  response_body["ringBufferSize"] = overallRingBufferSize;
++  response_body["callTime"] = callTime;
++  response_body["secsSinceEpoch"] = secs_since_epoch;
++  response.set_body(response_body);
++  return response;
++}
++
++/** TODO
++ * ensuring chronological order of spikes
++ * ensuring port # separation
++ * marking yields called after simulation end
++ * CurrentSimulationTime or last spike time??
++ */
++web::http::http_response HttpServer::InsiteSpikeDetectorRingBufferSize(
++    const web::http::http_request& request) {
++  using namespace std::chrono;
++  system_clock::time_point tp = system_clock::now();
++  system_clock::duration dtn = tp.time_since_epoch();
++  double secs_since_epoch = double(dtn.count())/1000000000.0;
++  const double callTime = storage_->GetCurrentSimulationTime();
++  std::uint64_t overallRingBufferSize = 0;
++  const auto parameters = web::uri::split_query(request.request_uri().query());
++  const auto spike_detector_id_parameter = parameters.find("spikedetectorId");
++  if (spike_detector_id_parameter == parameters.end()) {
++    auto spike_detectors = storage_->GetSpikeDetectors();
++    for (const auto& spike_detector_id_storage : spike_detectors) {
++      overallRingBufferSize += spike_detector_id_storage.second->RingBufferSize();
++    }
++  } else {
++    const auto spike_detector_id =
++        std::stoll(spike_detector_id_parameter->second);
++    const auto spike_detector =
++        storage_->GetSpikeDetectorStorage(spike_detector_id);
++
++    if (spike_detector == nullptr) {
++      return CreateErrorResponse(web::http::status_codes::BadRequest,
++                                 {"InvalidSpikeDetectorId"});
++    } else {
++      overallRingBufferSize += spike_detector->RingBufferSize();
++    }
++  }
++
++  web::http::http_response response(web::http::status_codes::OK);
++  web::json::value response_body = web::json::value::object();
++  response_body["ringBufferSize"] = overallRingBufferSize;
++  response_body["callTime"] = callTime;
++  response_body["secsSinceEpoch"] = secs_since_epoch;
++  response.set_body(response_body);
++  return response;
++}
++
++/** TODO
++ * NEST-Zugang zu Nodes
++ * Umwandlung in iaf_psc_delta
++ * 
++ * 
++ */
++web::http::http_response HttpServer::NestIafPscDeltaRingBufferSize(
++    const web::http::http_request& request) {
++  using namespace std::chrono;
++  system_clock::time_point tp = system_clock::now();
++  system_clock::duration dtn = tp.time_since_epoch();
++  double secs_since_epoch = double(dtn.count())/1000000000.0;
++  const double callTime = storage_->GetCurrentSimulationTime();
++  
++  std::uint64_t overallRingBufferSize = SpikedetectorStorage::NestIafPscDeltaRingBufferSize();
++
++  web::http::http_response response(web::http::status_codes::OK);
++  web::json::value response_body = web::json::value::object();
++  response_body["ringBufferSize"] = overallRingBufferSize;
++  response_body["callTime"] = callTime;
++  response_body["secsSinceEpoch"] = secs_since_epoch;
++  response.set_body(response_body);
++  return response;
++}
+ 
+ web::json::value HttpServer::Error::Serialize() const {
+   web::json::value error = web::json::value::object();
+diff -ruN insite-1.1.0/nest-module/src/http_server.hpp NEW/nest-module/src/http_server.hpp
+--- insite-1.1.0/nest-module/src/http_server.hpp	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/http_server.hpp	2023-01-09 15:57:17.863669808 +0100
+@@ -30,6 +30,10 @@
+   web::http::http_response GetCurrentSimulationTime(const web::http::http_request& request);
+   web::http::http_response GetSpikes(const web::http::http_request& request);
+   web::http::http_response GetMultimeterMeasurement(const web::http::http_request& request);
++  web::http::http_response SpikeCountForLast(const web::http::http_request& request);
++  web::http::http_response InsiteSpikeDetectorRingBufferSize(const web::http::http_request& request);
++  web::http::http_response InsiteMultimeterTimeStepRingBufferSize(const web::http::http_request& request);
++  web::http::http_response NestIafPscDeltaRingBufferSize(const web::http::http_request& request);
+ 
+   struct Error {
+     std::string code;
+diff -ruN insite-1.1.0/nest-module/src/storage/multimeter_storage.cpp NEW/nest-module/src/storage/multimeter_storage.cpp
+--- insite-1.1.0/nest-module/src/storage/multimeter_storage.cpp	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/storage/multimeter_storage.cpp	2023-01-01 11:46:37.421141739 +0100
+@@ -224,4 +224,8 @@
+   return time_offset;
+ }
+ 
++std::uint64_t MultimeterStorage::TimeStepRingBufferSize(){
++  return simulation_times_.size();
++}
++
+ }  // namespace insite
+diff -ruN insite-1.1.0/nest-module/src/storage/multimeter_storage.hpp NEW/nest-module/src/storage/multimeter_storage.hpp
+--- insite-1.1.0/nest-module/src/storage/multimeter_storage.hpp	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/storage/multimeter_storage.hpp	2023-01-01 11:45:51.992397684 +0100
+@@ -109,6 +109,7 @@
+   void ExtractMeasurements(rapidjson::Writer<rapidjson::StringBuffer> &writer,
+       const std::string& attribute_name, const std::vector<uint64_t>& node_ids = {},
+       double from_time = 0.0, double to_time = std::numeric_limits<double>::infinity());
++  std::uint64_t TimeStepRingBufferSize();
+  private:
+   std::uint64_t id_;
+ 
+diff -ruN insite-1.1.0/nest-module/src/storage/spikedetector_storage.cpp NEW/nest-module/src/storage/spikedetector_storage.cpp
+--- insite-1.1.0/nest-module/src/storage/spikedetector_storage.cpp	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/storage/spikedetector_storage.cpp	2023-01-09 17:20:36.676771129 +0100
+@@ -78,7 +78,8 @@
+         current_spike.simulation_time < to_time &&
+         current_spike.node_id >= from_neuron_id &&
+         current_spike.node_id <= to_neuron_id) {
+-      if(node_ids->empty() || std::find(node_ids->begin(),node_ids->end(),current_spike.node_id) != node_ids->end())
++      if(node_ids->empty()
++		 || std::find(node_ids->begin(),node_ids->end(),current_spike.node_id) != node_ids->end())
+         spikes_vector->push_back(current_spike);
+     }
+ 
+@@ -89,4 +90,31 @@
+   } while (current_index != end_index);
+ }
+ 
++size_t SpikedetectorStorage::SpikeCountForLast(double duration) {
++  const double last_time = LastSpikeTime();
++  if (last_time < duration) {
++	return -1;
++  }
++  const double from_time = last_time - duration;
++  std::uint64_t current_index = first_spike_index_ + spikes_.size() - 1;
++  size_t count = 0;
++
++  do {
++    const auto& current_spike = spikes_[current_index];
++	/** TODO: Das mit std::find noch dazu (z.B. Port-Unterscheidung)??
++      if(node_ids->empty()
++		 || std::find(node_ids->begin(),node_ids->end(),current_spike.node_id) != node_ids->end())
++	 */
++    if (current_spike.simulation_time >= from_time) {
++      count++;
++    }
++    --current_index;
++  } while (current_index > first_spike_index_);
++  return count;
++}
++
++std::uint64_t SpikedetectorStorage::RingBufferSize(){
++  return spikes_.size();
++}
++
+ }  // namespace insite
+diff -ruN insite-1.1.0/nest-module/src/storage/spikedetector_storage.hpp NEW/nest-module/src/storage/spikedetector_storage.hpp
+--- insite-1.1.0/nest-module/src/storage/spikedetector_storage.hpp	2022-02-17 12:31:31.000000000 +0100
++++ NEW/nest-module/src/storage/spikedetector_storage.hpp	2023-01-17 01:21:12.771380868 +0100
+@@ -9,6 +9,7 @@
+ #include <unordered_map>
+ #include <vector>
+ #include "node_collection.h"
++#include "iaf_psc_delta.h"
+ 
+ namespace insite {
+ 
+@@ -37,6 +38,30 @@
+       std::uint64_t from_neuron_id = 0,
+       std::uint64_t to_neuron_id = std::numeric_limits<std::uint64_t>::max(),
+         std::vector<std::uint64_t> *node_ids = nullptr);
++  std::uint64_t RingBufferSize();
++  static std::uint64_t NestIafPscDeltaRingBufferSize(){
++/*
++	  const int IAF_PSC_DELTA_MODEL_NR = 21;
++	  // int rank = nest::kernel().mpi_manager.get_rank();
++	  nest::SparseNodeArray nodes = nest::kernel().node_manager.get_local_nodes(0);
++	  size_t count = nodes.size();
++	  uint64_t ringbuf_size= 0;
++	  for(size_t n=0; n< count; n++) {
++		nest::Node* node = nodes.get_node_by_index(0);
++		if(node->get_model_id() == IAF_PSC_DELTA_MODEL_NR){
++		  nest::iaf_psc_delta* neuron= (nest::iaf_psc_delta*)node;
++		  ringbuf_size += neuron->spike_buffer_size();
++		  //		  ringbuf_size += neuron->current_buffer_size();
++		}
++	  }
++// */
++	  size_t ringbuf_size = nest::kernel().mpi_manager.get_buffer_size_spike_data();
++	  return ringbuf_size;
++  }
++  double LastSpikeTime(){
++	 return spikes_.back().simulation_time;
++  }
++  size_t SpikeCountForLast(double duration);
+  private:
+   std::uint64_t id_;
+   std::vector<std::uint64_t> connected_nodes_;
+diff -ruN insite-1.1.0/time.h NEW/time.h
+--- insite-1.1.0/time.h	1970-01-01 01:00:00.000000000 +0100
++++ NEW/time.h	2022-08-27 12:25:29.000000000 +0200
+@@ -0,0 +1,303 @@
++/* Copyright (C) 1991-2020 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <https://www.gnu.org/licenses/>.  */
++
++/*
++ *	ISO C99 Standard: 7.23 Date and time	<time.h>
++ */
++
++#ifndef	_TIME_H
++#define _TIME_H	1
++
++#include <features.h>
++
++#define __need_size_t
++#define __need_NULL
++#include <stddef.h>
++
++/* This defines CLOCKS_PER_SEC, which is the number of processor clock
++   ticks per second, and possibly a number of other constants.   */
++#include <bits/time.h>
++
++/* Many of the typedefs and structs whose official home is this header
++   may also need to be defined by other headers.  */
++#include <bits/types/clock_t.h>
++#include <bits/types/time_t.h>
++#include <bits/types/struct_tm.h>
++
++#if defined __USE_POSIX199309 || defined __USE_ISOC11
++# include <bits/types/struct_timespec.h>
++#endif
++
++#ifdef __USE_POSIX199309
++# include <bits/types/clockid_t.h>
++# include <bits/types/timer_t.h>
++# include <bits/types/struct_itimerspec.h>
++struct sigevent;
++#endif
++
++#ifdef __USE_XOPEN2K
++# ifndef __pid_t_defined
++typedef __pid_t pid_t;
++#  define __pid_t_defined
++# endif
++#endif
++
++#ifdef __USE_XOPEN2K8
++# include <bits/types/locale_t.h>
++#endif
++
++#ifdef __USE_ISOC11
++/* Time base values for timespec_get.  */
++# define TIME_UTC 1
++#endif
++
++__BEGIN_DECLS
++
++/* Time used by the program so far (user time + system time).
++   The result / CLOCKS_PER_SEC is program time in seconds.  */
++extern clock_t clock (void) __THROW;
++
++/* Return the current time and put it in *TIMER if TIMER is not NULL.  */
++extern time_t time (time_t *__timer) __THROW;
++
++/* Return the difference between TIME1 and TIME0.  */
++extern double difftime (time_t __time1, time_t __time0)
++     __THROW __attribute__ ((__const__));
++
++/* Return the `time_t' representation of TP and normalize TP.  */
++extern time_t mktime (struct tm *__tp) __THROW;
++
++
++/* Format TP into S according to FORMAT.
++   Write no more than MAXSIZE characters and return the number
++   of characters written, or 0 if it would exceed MAXSIZE.  */
++extern size_t strftime (char *__restrict __s, size_t __maxsize,
++			const char *__restrict __format,
++			const struct tm *__restrict __tp) __THROW;
++
++#ifdef __USE_XOPEN
++/* Parse S according to FORMAT and store binary time information in TP.
++   The return value is a pointer to the first unparsed character in S.  */
++extern char *strptime (const char *__restrict __s,
++		       const char *__restrict __fmt, struct tm *__tp)
++     __THROW;
++#endif
++
++#ifdef __USE_XOPEN2K8
++/* Similar to the two functions above but take the information from
++   the provided locale and not the global locale.  */
++
++extern size_t strftime_l (char *__restrict __s, size_t __maxsize,
++			  const char *__restrict __format,
++			  const struct tm *__restrict __tp,
++			  locale_t __loc) __THROW;
++#endif
++
++#ifdef __USE_GNU
++extern char *strptime_l (const char *__restrict __s,
++			 const char *__restrict __fmt, struct tm *__tp,
++			 locale_t __loc) __THROW;
++#endif
++
++
++/* Return the `struct tm' representation of *TIMER
++   in Universal Coordinated Time (aka Greenwich Mean Time).  */
++extern struct tm *gmtime (const time_t *__timer) __THROW;
++
++/* Return the `struct tm' representation
++   of *TIMER in the local timezone.  */
++extern struct tm *localtime (const time_t *__timer) __THROW;
++
++#if defined __USE_POSIX || __GLIBC_USE (ISOC2X)
++/* Return the `struct tm' representation of *TIMER in UTC,
++   using *TP to store the result.  */
++extern struct tm *gmtime_r (const time_t *__restrict __timer,
++			    struct tm *__restrict __tp) __THROW;
++
++/* Return the `struct tm' representation of *TIMER in local time,
++   using *TP to store the result.  */
++extern struct tm *localtime_r (const time_t *__restrict __timer,
++			       struct tm *__restrict __tp) __THROW;
++#endif	/* POSIX || C2X */
++
++/* Return a string of the form "Day Mon dd hh:mm:ss yyyy\n"
++   that is the representation of TP in this format.  */
++extern char *asctime (const struct tm *__tp) __THROW;
++
++/* Equivalent to `asctime (localtime (timer))'.  */
++extern char *ctime (const time_t *__timer) __THROW;
++
++#if defined __USE_POSIX || __GLIBC_USE (ISOC2X)
++/* Reentrant versions of the above functions.  */
++
++/* Return in BUF a string of the form "Day Mon dd hh:mm:ss yyyy\n"
++   that is the representation of TP in this format.  */
++extern char *asctime_r (const struct tm *__restrict __tp,
++			char *__restrict __buf) __THROW;
++
++/* Equivalent to `asctime_r (localtime_r (timer, *TMP*), buf)'.  */
++extern char *ctime_r (const time_t *__restrict __timer,
++		      char *__restrict __buf) __THROW;
++#endif	/* POSIX || C2X */
++
++
++/* Defined in localtime.c.  */
++extern char *__tzname[2];	/* Current timezone names.  */
++extern int __daylight;		/* If daylight-saving time is ever in use.  */
++extern long int __timezone;	/* Seconds west of UTC.  */
++
++
++#ifdef	__USE_POSIX
++/* Same as above.  */
++extern char *tzname[2];
++
++/* Set time conversion information from the TZ environment variable.
++   If TZ is not defined, a locale-dependent default is used.  */
++extern void tzset (void) __THROW;
++#endif
++
++#if defined __USE_MISC || defined __USE_XOPEN
++extern int daylight;
++extern long int timezone;
++#endif
++
++
++/* Nonzero if YEAR is a leap year (every 4 years,
++   except every 100th isn't, and every 400th is).  */
++#define __isleap(year)	\
++  ((year) % 4 == 0 && ((year) % 100 != 0 || (year) % 400 == 0))
++
++
++#ifdef __USE_MISC
++/* Miscellaneous functions many Unices inherited from the public domain
++   localtime package.  These are included only for compatibility.  */
++
++/* Like `mktime', but for TP represents Universal Time, not local time.  */
++extern time_t timegm (struct tm *__tp) __THROW;
++
++/* Another name for `mktime'.  */
++extern time_t timelocal (struct tm *__tp) __THROW;
++
++/* Return the number of days in YEAR.  */
++extern int dysize (int __year) __THROW  __attribute__ ((__const__));
++#endif
++
++
++#ifdef __USE_POSIX199309
++/* Pause execution for a number of nanoseconds.
++
++   This function is a cancellation point and therefore not marked with
++   __THROW.  */
++extern int nanosleep (const struct timespec *__requested_time,
++		      struct timespec *__remaining);
++
++
++/* Get resolution of clock CLOCK_ID.  */
++extern int clock_getres (clockid_t __clock_id, struct timespec *__res) __THROW;
++
++/* Get current value of clock CLOCK_ID and store it in TP.  */
++extern int clock_gettime (clockid_t __clock_id, struct timespec *__tp) __THROW;
++
++/* Set clock CLOCK_ID to value TP.  */
++extern int clock_settime (clockid_t __clock_id, const struct timespec *__tp)
++     __THROW;
++
++# ifdef __USE_XOPEN2K
++/* High-resolution sleep with the specified clock.
++
++   This function is a cancellation point and therefore not marked with
++   __THROW.  */
++extern int clock_nanosleep (clockid_t __clock_id, int __flags,
++			    const struct timespec *__req,
++			    struct timespec *__rem);
++
++/* Return clock ID for CPU-time clock.  */
++extern int clock_getcpuclockid (pid_t __pid, clockid_t *__clock_id) __THROW;
++# endif
++
++
++/* Create new per-process timer using CLOCK_ID.  */
++extern int timer_create (clockid_t __clock_id,
++			 struct sigevent *__restrict __evp,
++			 timer_t *__restrict __timerid) __THROW;
++
++/* Delete timer TIMERID.  */
++extern int timer_delete (timer_t __timerid) __THROW;
++
++/* Set timer TIMERID to VALUE, returning old value in OVALUE.  */
++extern int timer_settime (timer_t __timerid, int __flags,
++			  const struct itimerspec *__restrict __value,
++			  struct itimerspec *__restrict __ovalue) __THROW;
++
++/* Get current value of timer TIMERID and store it in VALUE.  */
++extern int timer_gettime (timer_t __timerid, struct itimerspec *__value)
++     __THROW;
++
++/* Get expiration overrun for timer TIMERID.  */
++extern int timer_getoverrun (timer_t __timerid) __THROW;
++#endif
++
++
++#ifdef __USE_ISOC11
++/* Set TS to calendar time based in time base BASE.  */
++extern int timespec_get (struct timespec *__ts, int __base)
++     __THROW __nonnull ((1));
++#endif
++
++
++#ifdef __USE_XOPEN_EXTENDED
++/* Set to one of the following values to indicate an error.
++     1  the DATEMSK environment variable is null or undefined,
++     2  the template file cannot be opened for reading,
++     3  failed to get file status information,
++     4  the template file is not a regular file,
++     5  an error is encountered while reading the template file,
++     6  memory allication failed (not enough memory available),
++     7  there is no line in the template that matches the input,
++     8  invalid input specification Example: February 31 or a time is
++	specified that can not be represented in a time_t (representing
++	the time in seconds since 00:00:00 UTC, January 1, 1970) */
++extern int getdate_err;
++
++/* Parse the given string as a date specification and return a value
++   representing the value.  The templates from the file identified by
++   the environment variable DATEMSK are used.  In case of an error
++   `getdate_err' is set.
++
++   This function is a possible cancellation point and therefore not
++   marked with __THROW.  */
++extern struct tm *getdate (const char *__string);
++#endif
++
++#ifdef __USE_GNU
++/* Since `getdate' is not reentrant because of the use of `getdate_err'
++   and the static buffer to return the result in, we provide a thread-safe
++   variant.  The functionality is the same.  The result is returned in
++   the buffer pointed to by RESBUFP and in case of an error the return
++   value is != 0 with the same values as given above for `getdate_err'.
++
++   This function is not part of POSIX and therefore no official
++   cancellation point.  But due to similarity with an POSIX interface
++   or due to the implementation it is a cancellation point and
++   therefore not marked with __THROW.  */
++extern int getdate_r (const char *__restrict __string,
++		      struct tm *__restrict __resbufp);
++#endif
++
++__END_DECLS
++
++#endif /* time.h.  */

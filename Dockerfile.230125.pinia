@@ -1,0 +1,18 @@
+# TODO: background mode
+# TODO: CMake by Repo
+# ~/CSMI/GitHub/monitoring_interface/docker# time docker build -t csmi_nest_vue:test .
+
+# syntax=docker/dockerfile:1
+FROM csmi_nest_node:at230125ground
+LABEL maintainer "rudnick@uni-trier.de"
+
+WORKDIR /work
+
+ENV TICS_PER_MS=1000
+ENV TICS_PER_STEP=100
+ENV TZ=Europe/Amsterdam
+
+ARG DEBIAN_FRONTEND=noninteractive
+# RUN npm run install
+EXPOSE 4444
+RUN npm run serve -- --port 4444

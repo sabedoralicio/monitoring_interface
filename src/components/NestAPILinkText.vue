@@ -1,40 +1,32 @@
-<template>
-  <!--
-  <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
-  >: {{ filteredResponse(nestAPIFunctionResponse) }}<br />
--->
-  <a :href="apiFunUrl(nodeURL, apiFunction)">{{ apiFunction }}</a
-  >: {{ nestAPIFunctionResponse }}<br />
-</template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
+<script lang='ts'>
+import { defineComponent } from 'vue';
 import { useCounterStore } from '@/store/index'
 
 export default defineComponent({
-  name: "NestAPILinkText",
-  props: {
-    nodeURL: String,
-    apiFunction: String,
-  },
-  data() {
-    return {
-      nestAPIFunctionResponse: "",
-    };
-  },
-  methods: {
-    apiFunUrl(nodeURL: string, apiFunction: string) {
-      return nodeURL + "/api/" + apiFunction;
-    },
-    filteredResponse(code: string): string {
-      return showNestResponseLore(asNestResponseLore(code));
-    },
-  },
-  created() {
-    fetch(this.$props.nodeURL + "/api/" + this.$props.apiFunction)
-      .then((response) => response.text())
-      .then((data) => (this.nestAPIFunctionResponse = data));
-  },
+	name: 'NestAPILinkText',
+	props: {
+		nodeURL: String,
+		// choice of API function to 
+		apiFunction: String,
+	},
+	data() {
+		return {
+			nestAPIFunctionResponse: '',
+		};
+	},
+	methods: {
+		apiFunUrl(nodeURL: string, apiFunction: string) {
+			return nodeURL + '/api/' + apiFunction;
+		},
+		filteredResponse(code: string): string {
+			return showNestResponseLore(asNestResponseLore(code));
+		},
+	},
+	created() {
+		fetch(this.$props.nodeURL + '/api/' + this.$props.apiFunction)
+			.then((response) => response.text())
+			.then((data) => (this.nestAPIFunctionResponse = data));
+	},
 });
 
 enum NestResponseKind {
@@ -56,56 +48,56 @@ type NestResponseLore = {
 };
 
 function isCallableSignatureNotSupported(responseString: string): boolean {
-  if (responseString.indexOf("callable <") != 0) {
+  if (responseString.indexOf('callable <') !== 0) {
     return false;
   } else {
-    let rest = responseString.split(">", 2);
-    return rest[1] === " is not supported by signature";
+    let rest = responseString.split('>', 2);
+    return rest[1] === ' is not supported by signature';
   }
 }
 
 function isHtmlMessage(responseString: string): boolean {
-  return responseString.indexOf("<!doctype html>") == 0;
+  return responseString.indexOf('<!doctype html>') === 0;
 }
 
 function isKernelException(responseString: string): boolean {
-  return responseString.indexOf("KernelException") == 0;
+  return responseString.indexOf('KernelException') === 0;
 }
 
 function isMissingArguments(responseString: string): boolean {
   return (
-    responseString.includes("() missing ") &&
-    responseString.includes(" required positional argument")
+    responseString.includes('() missing ') &&
+    responseString.includes(' required positional argument')
   );
 }
 
 function isNoHelpIndex(responseString: string): boolean {
   return (
-    responseString.indexOf("Sorry, the help index cannot be opened. ") == 0
+    responseString.indexOf('Sorry, the help index cannot be opened. ') === 0
   );
 }
 
 function isNotInNestModule(responseString: string): boolean {
-  return responseString.indexOf("module 'nest' has no attribute") == 0;
+  return responseString.indexOf("module 'nest' has no attribute") === 0;
 }
 
 function isSLIFunctionDictError(responseString: string): boolean {
   return (
-    responseString.indexOf("DictError in SLI function SLIInterpreter") == 0
+    responseString.indexOf('DictError in SLI function SLIInterpreter') === 0
   );
 }
 
 function isUndefinedName(responseString: string): boolean {
-  if (responseString.indexOf("name '") != 0) {
+  if (responseString.indexOf("name '") !== 0) {
     return false;
   } else {
     let rest = responseString.split("'", 3);
-    return rest[2] === " is not defined";
+    return rest[2] === ' is not defined';
   }
 }
 
 function isUnexpectedObject(responseString: string): boolean {
-  return responseString.indexOf("unexpected object <") == 0;
+  return responseString.indexOf('unexpected object <') === 0;
 }
 
 function asNestResponseLore(responseString: string): NestResponseLore {
@@ -141,31 +133,31 @@ function asNestResponseLore(responseString: string): NestResponseLore {
 function showNestResponseLore(lore: NestResponseLore): string {
   switch (lore.kind) {
     case NestResponseKind.CallableSignatureNotSupported: {
-      return "CALLABLE SIGNATURE NOT SUPPORTED";
+      return 'CALLABLE SIGNATURE NOT SUPPORTED';
     }
     case NestResponseKind.HtmlMessage: {
-      return "HTML MESSAGE";
+      return 'HTML MESSAGE';
     }
     case NestResponseKind.KernelException: {
-      return "KERNEL EXCEPTION";
+      return 'KERNEL EXCEPTION';
     }
     case NestResponseKind.MissingArguments: {
-      return "MISSING ARGUMENTS";
+      return 'MISSING ARGUMENTS';
     }
     case NestResponseKind.NoHelpIndex: {
-      return "NO HELP INDEX";
+      return 'NO HELP INDEX';
     }
     case NestResponseKind.NotInNestModule: {
-      return "NOT IN NEST MODULE";
+      return 'NOT IN NEST MODULE';
     }
     case NestResponseKind.SLIFunctionDictError: {
-      return "SLI FUNCTION DICT ERROR";
+      return 'SLI FUNCTION DICT ERROR';
     }
     case NestResponseKind.UndefinedName: {
-      return "UNDEFINED NAME";
+      return 'UNDEFINED NAME';
     }
     case NestResponseKind.UnexpectedObject: {
-      return "UNEXPECTED OBJECT";
+      return 'UNEXPECTED OBJECT';
     }
     default: {
       // "max_update_time":-Infinity
@@ -178,3 +170,12 @@ function showNestResponseLore(lore: NestResponseLore): string {
   }
 }
 </script>
+
+<template>
+  <!--
+  <a :href='apiFunUrl(nodeURL, apiFunction)'>{{ apiFunction }}</a
+  >: {{ filteredResponse(nestAPIFunctionResponse) }}<br />
+-->
+  <a :href='apiFunUrl(nodeURL, apiFunction)'>{{ apiFunction }}</a
+  >: {{ nestAPIFunctionResponse }}<br />
+</template>

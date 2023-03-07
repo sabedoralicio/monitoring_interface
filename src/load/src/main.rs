@@ -7,7 +7,7 @@ use crate::portnr_pid::*;
 use crate::proc_stats::*;
 use crate::types::*;
 
-///
+///                                                                 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 { usage(); }
@@ -34,7 +34,7 @@ fn main() {
     }
 }
 
-///
+///                                                                 
 fn port_pid_of(code: &str) -> (PortNr,PID) {
     let tokens: Vec<&str> = code.split(':').collect();
     let port: PortNr = u32::from_str_radix(tokens[0],10).unwrap();
@@ -42,21 +42,21 @@ fn port_pid_of(code: &str) -> (PortNr,PID) {
     (port,pid)
 }
 
-///
+///                                                                 
 fn usage() {
     println!("USAGE:");
     println!("proc-lore pids <PORT_NR COMMA SEPARATED>");
     println!("proc-lore loads <TIMEPAN NS> <PORT_NR:PID COMMA SEPARATED>");
 }
 
-///
+///                                                                 
 fn portnr_pid_map_code(portnr_pid_map: HashMap<PortNr,PID>) -> JSON {
     let codes: Vec<JSON> =
         portnr_pid_map.iter().map(|(port,pid)| format!("{}:{}", port, pid)).collect();
     codes.join(",")
 }
 
-///
+///                                                                 
 fn portnr_pid_map_json(portnr_pid_map: HashMap<PortNr,PID>) -> JSON {
     let jsons: Vec<JSON> =
         portnr_pid_map.iter().map(|(port,pid)| format!("{{ port: {}, pid: {} }}", port, pid)).collect();

@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use std::path::Path;
 use crate::types::*;
 
-///
+///                                                                     
 pub fn portnr_pid_map(port_nrs: Vec<PortNr>) -> HashMap<PortNr,PID> {
     let mut port_pid_map: HashMap<PortNr,PID> = HashMap::new();
     for port_nr in port_nrs {
@@ -90,10 +90,15 @@ pub fn inode_pid_map() -> HashMap<Inode,PID> {
 fn fdinfo_max_inode(path_str: &str) -> Option<Inode> {
     let path = Path::new(&path_str);
     let mut max_file_nr: i32 = -1;
-    for entry_result in path.read_dir().unwrap() {
-        let file_nr: i32 =
-            i32::from_str_radix(entry_result.unwrap().file_name().to_str().unwrap(),10).unwrap();
-        max_file_nr = max_file_nr.max(file_nr);
+    match path.read_dir() {
+        Err(err) => {}
+        Ok(entry_results) => {
+            for entry_result in path.read_dir().unwrap() {
+                let file_nr: i32 =
+                    i32::from_str_radix(entry_result.unwrap().file_name().to_str().unwrap(),10).unwrap();
+                max_file_nr = max_file_nr.max(file_nr);
+            }
+        }
     }
     if max_file_nr < 0 {
         None

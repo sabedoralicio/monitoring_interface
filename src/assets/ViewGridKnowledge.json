@@ -1,0 +1,38 @@
+{
+  "count": 5,
+  "viewGridKnowledge": [
+      { "id": "Source", "sidebar_col": 0, "path": "/", "items": ["Nest Server", "Insite"],
+		"tooltip": "Overall load statistics",
+		"links": [ { "url": "/", "name": "Overall All Nodes"},
+				   { "url": "/nest_api", "name": "Overall Nest API"},
+				   { "url": "/cpu", "name": "Overall Node A"},
+				   { "url": "/mem", "name": "Overall Node B"},
+				   { "url": "/ringbuffer", "name": "Overall Node C"},
+				   { "url": "/spikes", "name": "Overall Node D"} ] },
+      { "id": "Preferences", "sidebar_col": 1, "path": "/cpu",
+		"items": ["Neurons", "Synapses"],
+		"tooltip": "CPU load, by jiffies",
+		"links": [ { "url": "/cpu_lore_all", "name": "CPU Load All Nodes"},
+				   { "url": "/tile/cpu/0", "name": "CPU Load Node 0"},
+				   { "url": "/tile/cpu/1", "name": "CPU Load Node 1"},
+				   { "url": "/tile/cpu/2", "name": "CPU Load Node 2"},
+				   { "url": "/tile/cpu/3", "name": "CPU Load Node 3"} ] },
+      { "id": "View", "sidebar_col": 3, "path": "/ringbuffer",
+		"items": ["MPI Buffer A", "MPI Buffer B"],
+		"tooltip": "MPI Buffer Load",
+		"links": [ { "url": "/ringbuffer", "name": "MPI Buffer All Nodes"},
+				   { "url": "/tile/ringbuf/0", "name": "MPI Buffer Node 0"},
+				   { "url": "/tile/ringbuf/1", "name": "MPI Buffer Node 1"},
+				   { "url": "/tile/ringbuf/2", "name": "MPI Buffer Node 2"},
+				   { "url": "/tile/ringbuf/3", "name": "MPI Buffer Node 3"} ] },
+      { "id": "Help", "sidebar_col": 4, "path": "/spikes",
+		"items": ["Doc", "About"],
+		"tooltip": "Non process related support.",
+		"links": [ { "url": "/spikes", "name": "Spikes/Process All Nodes"},
+				   { "url": "/tile/spikes/0", "name": "Spikes/Process Node 0"},
+				   { "url": "/tile/spikes/1", "name": "Spikes/Process Node 1"},
+				   { "url": "/tile/spikes/2", "name": "Spikes/Process Node 2"},
+				   { "url": "/tile/spikes/3", "name": "Spikes/Process Node 3"} ] }
+  ]
+}
+

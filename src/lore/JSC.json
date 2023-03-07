@@ -1,0 +1,85 @@
+[{ "site name" : "JUWELS",
+   "URL" : "https://apps.fz-juelich.de/jsc/hps/juwels/configuration.html"
+   "CPU core count" : 122768,
+   "GPU count" : 224,
+   "CPU Tflops" : 10600.0,
+   "GPU Tflops" : 1700.0,
+   "node sets" :
+   [{ "description" : "standard compute nodes",
+	  "count" : 2271,
+	  "CPU core count / unit" : 48,
+	  "GPU count / unit" : 0
+	},
+	{ "description" : "large-memory compute nodes",
+	  "count" : 240,
+	  "CPU core count / unit" : 48,
+	  "GPU count / unit" : 0
+	},
+	{ "description" : "accelerated compute nodes",
+	  "count" : 56,
+	  "CPU core count / unit" : 40,
+	  "GPU count / unit" : 4
+	},
+	{ "description" : "login nodes",
+	  "count" : 12,
+	  "CPU core count / unit" : 40,
+	  "GPU count / unit" : 0
+	},
+	{ "description" : "visualisation nodes",
+	  "count" : 4,
+	  "CPU core count / unit" : 40,
+	  "GPU count / unit" : 1
+	}]
+ },
+ { "site name" : "JURECA",
+   "URL" : "https://apps.fz-juelich.de/jsc/hps/jureca/configuration.html"
+   "CPU core count" : 98304,
+   "GPU count" : 768,
+   "CPU Tflops" : 3540.0,
+   "GPU Tflops" : 14980.0,
+   "node sets" :
+   [{ "description" : "standard compute nodes",
+	  "count" : 480,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 0
+	},
+	{ "description" : "large-memory compute nodes",
+	  "count" : 96,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 0
+	},
+	{ "description" : "accelerated compute nodes",
+	  "count" : 192,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 4
+	},
+	{ "description" : "login nodes",
+	  "count" : 12,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 2
+	}]
+ },
+ { "site name" : "JUSUF",
+   "URL" : "https://apps.fz-juelich.de/jsc/hps/jusuf/cluster/configuration.html"
+   "CPU core count" : 26240,
+   "GPU count" : 61,
+   "CPU Tflops" : 944.6,
+   "GPU Tflops" : 427.0,
+   "node sets" :
+   [{ "description" : "standard compute nodes",
+	  "count" : 144,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 0
+	},
+	{ "description" : "accelerated compute nodes",
+	  "count" : 61,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 1
+	},
+	{ "description" : "login nodes",
+	  "count" : 4,
+	  "CPU core count / unit" : 128,
+	  "GPU count / unit" : 0
+	}]
+ }]
+

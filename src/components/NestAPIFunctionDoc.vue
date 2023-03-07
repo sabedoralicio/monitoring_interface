@@ -1,17 +1,6 @@
-<template>
-  <div id="app">
-    <b>{{ apiFunction }} [{{ nodeURL }}]: {{ errorMessage }}</b
-    >:
-  </div>
-  <pre>{{ nestAPIFunctionDoc }}</pre>
-  <div class="card-body">
-    <b>{{ errorMessage }}</b>
-  </div>
-</template>
-
 <script>
 export default {
-  name: "NestAPIFunctionDoc",
+  name: 'NestAPIFunctionDoc',
   props: {
     nodeURL: String,
     apiFunction: String,
@@ -25,9 +14,9 @@ export default {
   created() {
     fetch(
       this.$props.nodeURL +
-        "/api/" +
+        '/api/' +
         this.$props.apiFunction +
-        "?inspect=getdoc"
+        '?inspect=getdoc'
     )
       .then(async (response) => {
         const data = await response.json();
@@ -42,8 +31,19 @@ export default {
       })
       .catch((error) => {
         this.errorMessage = error;
-        console.error("There was an error!", error);
+        console.error('There was an error!', error);
       });
   },
 };
 </script>
+
+<template>
+  <div id='app'>
+    <b>{{ apiFunction }} [{{ nodeURL }}]: {{ errorMessage }}</b
+    >:
+  </div>
+  <pre>{{ nestAPIFunctionDoc }}</pre>
+  <div class='card-body'>
+    <b>{{ errorMessage }}</b>
+  </div>
+</template>
